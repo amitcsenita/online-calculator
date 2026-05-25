@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
   :root {
@@ -304,6 +305,82 @@
     button.key { transition: none; }
   }
 
+  /* ——————————— History ——————————— */
+
+  .history-card { padding: 16px 22px; }
+  .history-card::before { display: none; }
+  .h-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .h-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .h-clear {
+    appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Geist', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color .12s, background .12s;
+  }
+  .h-clear:hover { color: var(--accent); background: rgba(182,90,51,.06); }
+  .h-list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .h-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 2px;
+    border-bottom: 1px solid var(--rule-2);
+    gap: 12px;
+  }
+  .h-item:last-child { border-bottom: none; }
+  .h-expr {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+  .h-result {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .h-empty {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 14px 0;
+  }
+
   /* Compact phones */
   @media (max-width: 360px) {
     .card { padding: 16px; border-radius: 18px; }
@@ -353,6 +430,16 @@
       <button class="key dot"        data-action="dot" aria-label="Decimal point">.</button>
       <button class="key eq"         data-action="equals" aria-label="Equals">=</button>
     </div>
+  </section>
+
+  <section class="card history-card" aria-label="Calculation history">
+    <div class="h-head">
+      <span class="h-title">History</span>
+      <button class="h-clear" onclick="clearHistory()">Clear</button>
+    </div>
+    <ul class="h-list" id="historyList">
+      <li class="h-empty">No calculations yet</li>
+    </ul>
   </section>
 
   <footer class="foot">
@@ -535,6 +622,7 @@
     const result = Math.round(raw * 1e10) / 1e10;
     // Update the expression line briefly to show the full computation
     exprEl.textContent = `${formatNumber(stored)} ${OP_GLYPH[op]} ${formatNumber(n)} =`;
+    saveCalc(exprEl.textContent, formatNumber(result));
     current = String(result);
     stored = null;
     op = null;
@@ -638,6 +726,51 @@
   // First paint
   render();
 })();
+
+// ——— Supabase history ———
+const _sb = window.supabase.createClient(
+  'https://wmvcfrfgkvifkvpngvoq.supabase.co',
+  'sb_publishable_krGF4GzVpHCtwQzCZPQnGw_lcaxbRGc'
+);
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function saveCalc(expr, result) {
+  await _sb.from('calculations').insert({ expression: expr, result: String(result) });
+  loadHistory();
+}
+
+async function loadHistory() {
+  const { data } = await _sb
+    .from('calculations')
+    .select('id, expression, result')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  renderHistory(data || []);
+}
+
+async function clearHistory() {
+  await _sb.from('calculations').delete().gte('id', 0);
+  renderHistory([]);
+}
+
+function renderHistory(records) {
+  const list = document.getElementById('historyList');
+  if (!records.length) {
+    list.innerHTML = '<li class="h-empty">No calculations yet</li>';
+    return;
+  }
+  list.innerHTML = records.map(r =>
+    `<li class="h-item">
+      <span class="h-expr">${escHtml(r.expression)}</span>
+      <span class="h-result">${escHtml(r.result)}</span>
+    </li>`
+  ).join('');
+}
+
+loadHistory();
 </script>
 
 </body>
