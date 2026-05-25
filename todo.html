@@ -670,11 +670,13 @@
     const todStr  = todayStr();
     const todDate = parseLocal(todStr);
 
-    // Start from the Monday 4 weeks before today
-    const start = new Date(todDate);
-    start.setDate(start.getDate() - 27);
-    const dow = start.getDay();
-    start.setDate(start.getDate() - (dow === 0 ? 6 : dow - 1));
+    // Monday of the current week, then go back 3 more weeks
+    // so today is always visible in the last row
+    const todMonday = new Date(todDate);
+    const dow = todMonday.getDay();
+    todMonday.setDate(todMonday.getDate() - (dow === 0 ? 6 : dow - 1));
+    const start = new Date(todMonday);
+    start.setDate(todMonday.getDate() - 21);
 
     const labels = ['M','T','W','T','F','S','S'];
     let html = `<div class="heat-labels">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
