@@ -361,12 +361,42 @@
   }
   .heat-cell {
     aspect-ratio: 1;
-    border-radius: 3px;
+    border-radius: 4px;
     cursor: default;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 2px 3px;
+  }
+  .heat-day {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(0,0,0,.30);
+    line-height: 1;
+    pointer-events: none;
   }
   .heat-cell.is-today {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+  }
+  .heat-cell.is-today .heat-day { color: var(--accent); }
+  .heat-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .heat-legend-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .04em;
+  }
+  .heat-legend-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
   }
 
   /* ── Footer ── */
@@ -691,18 +721,31 @@
       const isToday = ds === todStr;
 
       let bg;
-      if (future || cnt === 0) bg = 'var(--rule-2)';
-      else if (cnt <= 2)       bg = '#E2CCA0';
-      else if (cnt <= 5)       bg = '#C49A5A';
-      else if (cnt <= 9)       bg = '#B07030';
-      else                     bg = 'var(--accent)';
+      if (future)        bg = 'var(--rule-2)';
+      else if (cnt === 0) bg = isToday ? 'rgba(182,90,51,.10)' : 'var(--rule-2)';
+      else if (cnt <= 2) bg = '#E8CC9E';
+      else if (cnt <= 5) bg = '#C49A5A';
+      else if (cnt <= 9) bg = '#B07030';
+      else               bg = 'var(--accent)';
 
+      const dayNum = d.getDate();
       html += `<div class="heat-cell${isToday ? ' is-today' : ''}"
-        style="background:${bg};opacity:${future ? '0.3' : '1'}"
-        title="${ds}: ${cnt} task${cnt !== 1 ? 's' : ''}"></div>`;
+        style="background:${bg};opacity:${future ? '0.35' : '1'}"
+        title="${ds}: ${cnt} task${cnt !== 1 ? 's' : ''}">
+        <span class="heat-day">${dayNum}</span>
+      </div>`;
     }
 
-    html += '</div>';
+    html += `</div>
+    <div class="heat-legend">
+      <span class="heat-legend-label">Less</span>
+      <div class="heat-legend-swatch" style="background:var(--rule-2)"></div>
+      <div class="heat-legend-swatch" style="background:#E8CC9E"></div>
+      <div class="heat-legend-swatch" style="background:#C49A5A"></div>
+      <div class="heat-legend-swatch" style="background:#B07030"></div>
+      <div class="heat-legend-swatch" style="background:var(--accent)"></div>
+      <span class="heat-legend-label">More</span>
+    </div>`;
     wrap.innerHTML = html;
   }
 
