@@ -322,14 +322,14 @@
   .btn-cancel { background: transparent; color: var(--muted); padding: 5px 6px; }
   .btn-cancel:hover { background: rgba(0,0,0,.04); }
 
-  /* ── Heatmap ── */
+  /* ── Week Chart ── */
   .heat-card { padding: 16px 22px; }
   .heat-card::before { display: none; }
   .heat-head {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 12px;
+    align-items: center;
+    margin-bottom: 16px;
   }
   .heat-title {
     font-family: 'Instrument Serif', serif;
@@ -337,67 +337,59 @@
     font-size: 18px;
     color: var(--ink);
   }
-  .heat-sub {
+  .streak-badge { display: flex; align-items: baseline; gap: 5px; }
+  .streak-num {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 24px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .streak-text {
     font-size: 11px;
-    letter-spacing: .10em;
+    letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--muted);
-  }
-  .heat-labels {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    margin-bottom: 4px;
-    text-align: center;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: .04em;
     font-weight: 500;
   }
-  .heat-grid {
+  .week-cols {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 6px;
+    align-items: end;
   }
-  .heat-cell {
-    aspect-ratio: 1;
-    border-radius: 4px;
+  .week-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
     cursor: default;
-    position: relative;
+  }
+  .week-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-2);
+    height: 15px;
+    line-height: 15px;
+  }
+  .week-bar-wrap {
+    width: 100%;
+    height: 60px;
     display: flex;
     align-items: flex-end;
-    justify-content: flex-end;
-    padding: 2px 3px;
   }
-  .heat-day {
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(0,0,0,.30);
-    line-height: 1;
-    pointer-events: none;
+  .week-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: height .25s ease;
   }
-  .heat-cell.is-today {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-  .heat-cell.is-today .heat-day { color: var(--accent); }
-  .heat-legend {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-content: flex-end;
-    margin-top: 10px;
-  }
-  .heat-legend-label {
+  .week-label {
     font-size: 10px;
     color: var(--muted);
+    font-weight: 500;
     letter-spacing: .04em;
   }
-  .heat-legend-swatch {
-    width: 11px;
-    height: 11px;
-    border-radius: 2px;
-  }
+  .week-label.today { color: var(--accent); font-weight: 600; }
 
   /* ── Footer ── */
   footer.foot {
@@ -448,12 +440,15 @@
     <div class="hour-grid" id="hourGrid" role="list" aria-label="Hour schedule"></div>
   </section>
 
-  <section class="card heat-card" aria-label="Activity heatmap">
+  <section class="card heat-card" aria-label="This week">
     <div class="heat-head">
-      <span class="heat-title">Activity</span>
-      <span class="heat-sub">last 4 weeks</span>
+      <span class="heat-title">This Week</span>
+      <div class="streak-badge" id="streakBadge" style="display:none">
+        <span class="streak-num" id="streakNum">0</span>
+        <span class="streak-text">day streak</span>
+      </div>
     </div>
-    <div id="heatmap"></div>
+    <div id="weekChart"></div>
   </section>
 
   <footer class="foot">
@@ -691,62 +686,63 @@
     try {
       const res  = await fetch(`${API}?heatmap=true`);
       const data = await res.json();
-      renderHeatmap(data);
+      renderWeek(data);
     } catch (_) {}
   }
 
-  function renderHeatmap(byDate) {
-    const wrap    = document.getElementById('heatmap');
+  function renderWeek(byDate) {
     const todStr  = todayStr();
     const todDate = parseLocal(todStr);
 
-    // Monday of the current week, then go back 3 more weeks
-    // so today is always visible in the last row
-    const todMonday = new Date(todDate);
-    const dow = todMonday.getDay();
-    todMonday.setDate(todMonday.getDate() - (dow === 0 ? 6 : dow - 1));
-    const start = new Date(todMonday);
-    start.setDate(todMonday.getDate() - 21);
-
-    const labels = ['M','T','W','T','F','S','S'];
-    let html = `<div class="heat-labels">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
-    html += '<div class="heat-grid">';
-
+    // Streak — consecutive days ending today with at least 1 task
+    let streak = 0;
+    const sc = new Date(todDate);
     for (let i = 0; i < 28; i++) {
-      const d   = new Date(start);
-      d.setDate(start.getDate() + i);
-      const ds  = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-      const cnt = byDate[ds] || 0;
-      const future  = ds > todStr;
-      const isToday = ds === todStr;
-
-      let bg;
-      if (future)        bg = 'var(--rule-2)';
-      else if (cnt === 0) bg = isToday ? 'rgba(182,90,51,.10)' : 'var(--rule-2)';
-      else if (cnt <= 2) bg = '#E8CC9E';
-      else if (cnt <= 5) bg = '#C49A5A';
-      else if (cnt <= 9) bg = '#B07030';
-      else               bg = 'var(--accent)';
-
-      const dayNum = d.getDate();
-      html += `<div class="heat-cell${isToday ? ' is-today' : ''}"
-        style="background:${bg};opacity:${future ? '0.35' : '1'}"
-        title="${ds}: ${cnt} task${cnt !== 1 ? 's' : ''}">
-        <span class="heat-day">${dayNum}</span>
-      </div>`;
+      const ds = `${sc.getFullYear()}-${pad(sc.getMonth()+1)}-${pad(sc.getDate())}`;
+      if ((byDate[ds] || 0) > 0) { streak++; sc.setDate(sc.getDate() - 1); }
+      else break;
+    }
+    const badge = document.getElementById('streakBadge');
+    if (streak > 0) {
+      document.getElementById('streakNum').textContent = streak;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
     }
 
-    html += `</div>
-    <div class="heat-legend">
-      <span class="heat-legend-label">Less</span>
-      <div class="heat-legend-swatch" style="background:var(--rule-2)"></div>
-      <div class="heat-legend-swatch" style="background:#E8CC9E"></div>
-      <div class="heat-legend-swatch" style="background:#C49A5A"></div>
-      <div class="heat-legend-swatch" style="background:#B07030"></div>
-      <div class="heat-legend-swatch" style="background:var(--accent)"></div>
-      <span class="heat-legend-label">More</span>
-    </div>`;
-    wrap.innerHTML = html;
+    // Monday of current week
+    const dow = todDate.getDay();
+    const monday = new Date(todDate);
+    monday.setDate(todDate.getDate() - (dow === 0 ? 6 : dow - 1));
+
+    const dayLabels = ['M','T','W','T','F','S','S'];
+    const weekData = dayLabels.map((label, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const ds = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      return { label, ds, count: byDate[ds] || 0, isFuture: ds > todStr, isToday: ds === todStr };
+    });
+
+    const maxCount = Math.max(...weekData.map(w => w.count), 1);
+    const BAR_MAX  = 60;
+
+    const wrap = document.getElementById('weekChart');
+    wrap.innerHTML = `<div class="week-cols">${weekData.map(({ label, ds, count, isFuture, isToday }) => {
+      const barH = count === 0 ? 3 : Math.max(8, Math.round((count / maxCount) * BAR_MAX));
+      let barColor;
+      if (isFuture)         barColor = 'var(--rule-2)';
+      else if (count === 0) barColor = isToday ? 'rgba(182,90,51,.12)' : 'var(--rule-2)';
+      else if (isToday)     barColor = 'var(--accent)';
+      else                  barColor = count <= 3 ? '#E8CC9E' : count <= 7 ? '#C49A5A' : '#B07030';
+
+      return `<div class="week-col" title="${ds}: ${count} task${count !== 1 ? 's' : ''}">
+        <div class="week-count">${count > 0 ? count : ''}</div>
+        <div class="week-bar-wrap">
+          <div class="week-bar" style="height:${barH}px;background:${barColor};opacity:${isFuture ? '0.3' : '1'}"></div>
+        </div>
+        <div class="week-label${isToday ? ' today' : ''}">${label}</div>
+      </div>`;
+    }).join('')}</div>`;
   }
 
   // ── Nav wiring ────────────────────────────────────────────────────────────
