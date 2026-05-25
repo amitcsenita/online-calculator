@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
   :root {
@@ -435,7 +434,6 @@
   <section class="card history-card" aria-label="Calculation history">
     <div class="h-head">
       <span class="h-title">History</span>
-      <button class="h-clear" onclick="clearHistory()">Clear</button>
     </div>
     <ul class="h-list" id="historyList">
       <li class="h-empty">No calculations yet</li>
@@ -727,33 +725,26 @@
   render();
 })();
 
-// ——— Supabase history ———
-const _sb = window.supabase.createClient(
-  'https://wmvcfrfgkvifkvpngvoq.supabase.co',
-  'sb_publishable_krGF4GzVpHCtwQzCZPQnGw_lcaxbRGc'
-);
+// ——— History via Vercel API ———
+const API = 'https://calculator-api-beige.vercel.app/api/calculations';
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function saveCalc(expr, result) {
-  await _sb.from('calculations').insert({ expression: expr, result: String(result) });
+  await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expression: expr, result: String(result) }),
+  });
   loadHistory();
 }
 
 async function loadHistory() {
-  const { data } = await _sb
-    .from('calculations')
-    .select('id, expression, result')
-    .order('created_at', { ascending: false })
-    .limit(20);
-  renderHistory(data || []);
-}
-
-async function clearHistory() {
-  await _sb.from('calculations').delete().gte('id', 0);
-  renderHistory([]);
+  const res = await fetch(API);
+  const data = await res.json();
+  renderHistory(Array.isArray(data) ? data : []);
 }
 
 function renderHistory(records) {
