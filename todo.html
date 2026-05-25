@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tools · Daily Planner</title>
+<meta name="description" content="A 24-hour daily task planner." />
+<meta name="theme-color" content="#F1EBDF" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper:    #F1EBDF;
+    --paper-2:  #FAF6EC;
+    --ink:      #1B1714;
+    --ink-2:    #4B4239;
+    --muted:    #8C8170;
+    --rule:     #D9CFBE;
+    --rule-2:   #E7DFCE;
+    --accent:   #B65A33;
+    --accent-2: #9A4825;
+    --key-bg:   #FCF9F1;
+    --shadow-card:
+       0 1px 0 rgba(255,255,255,.7) inset,
+       0 -1px 0 rgba(0,0,0,.04) inset,
+       0 30px 60px -30px rgba(50, 35, 20, .25),
+       0 8px 18px -10px rgba(50, 35, 20, .18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    background-image:
+      radial-gradient(ellipse 70% 60% at 50% 30%, #F7F1E4 0%, var(--paper) 55%, #E9E0CC 100%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-blend-mode: multiply;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+    display: grid;
+    place-items: start center;
+    padding: clamp(16px, 4vw, 40px);
+  }
+
+  /* ── Layout ── */
+  .stage {
+    width: min(640px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 40px;
+  }
+
+  header.brand {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 6px;
+  }
+  .wordmark {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: .005em;
+    color: var(--ink);
+  }
+  .wordmark .dot { color: var(--accent); font-style: normal; margin-left: 2px; }
+  .wordmark .sub {
+    font-family: 'Geist', sans-serif;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .meta {
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: linear-gradient(180deg, var(--paper-2) 0%, #F4EEDD 100%);
+    border: 1px solid var(--rule-2);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 10px 14px auto 14px;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, transparent 0 5px, var(--rule) 5px 8px);
+    opacity: .55;
+  }
+
+  /* ── Date navigation ── */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 0 2px;
+  }
+  .nav-btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--ink-2);
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    transition: background .12s;
+  }
+  .nav-btn:hover { background: rgba(0,0,0,.03); }
+  .date-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .day-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .date-full {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+  .jump-input {
+    font-family: 'Geist', sans-serif;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 5px 8px;
+    color: var(--ink-2);
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    color-scheme: light;
+  }
+  .jump-input:focus { border-color: var(--accent); }
+
+  /* ── Hour grid ── */
+  .hour-grid {
+    max-height: 420px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+    margin: 0 -4px;
+    padding: 0 4px;
+  }
+
+  .hour-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 4px 4px 4px 6px;
+    border-bottom: 1px solid var(--rule-2);
+    border-left: 2px solid transparent;
+    transition: background .10s;
+  }
+  .hour-row:last-child { border-bottom: none; }
+  .hour-row:hover { background: rgba(0,0,0,.015); }
+
+  .hour-row.is-now {
+    border-left-color: var(--accent);
+    background: rgba(182,90,51,.03);
+  }
+  .hour-row.is-now .hour-label { color: var(--accent); font-weight: 600; }
+
+  .hour-label {
+    font-family: 'Geist', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: .04em;
+    width: 42px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hour-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  /* Task display */
+  .cat-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .task-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color .10s;
+  }
+  .task-text:hover { color: var(--accent); }
+  .task-text.is-done {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .empty-hint {
+    font-size: 12px;
+    color: var(--rule);
+    cursor: pointer;
+    flex: 1;
+    transition: color .12s;
+    letter-spacing: .02em;
+    user-select: none;
+  }
+  .hour-row:hover .empty-hint { color: var(--muted); }
+
+  .btn-check {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    font-size: 11px;
+    color: var(--rule);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color .12s, border-color .12s, background .12s;
+    padding: 0;
+    line-height: 1;
+  }
+  .btn-check:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-check.is-checked {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(182,90,51,.08);
+  }
+
+  /* Edit mode */
+  .task-input {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Geist', sans-serif;
+    font-size: 13px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .12s;
+  }
+  .task-input:focus { border-color: var(--accent); }
+
+  .cat-sel {
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 5px 6px;
+    color: var(--ink-2);
+    cursor: pointer;
+    outline: none;
+    flex-shrink: 0;
+  }
+
+  .btn-save, .btn-del, .btn-cancel {
+    appearance: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    flex-shrink: 0;
+    transition: background .12s;
+    white-space: nowrap;
+  }
+  .btn-save { background: var(--ink); color: var(--paper-2); }
+  .btn-save:hover { background: #2A231D; }
+  .btn-del {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(182,90,51,.25);
+  }
+  .btn-del:hover { background: rgba(182,90,51,.08); }
+  .btn-cancel { background: transparent; color: var(--muted); padding: 5px 6px; }
+  .btn-cancel:hover { background: rgba(0,0,0,.04); }
+
+  /* ── Heatmap ── */
+  .heat-card { padding: 16px 22px; }
+  .heat-card::before { display: none; }
+  .heat-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .heat-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .heat-sub {
+    font-size: 11px;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .heat-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .04em;
+    font-weight: 500;
+  }
+  .heat-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .heat-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    cursor: default;
+  }
+  .heat-cell.is-today {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* ── Footer ── */
+  footer.foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  footer.foot a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color .12s;
+  }
+  footer.foot a:hover { color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hour-row, .task-text, .empty-hint, .btn-check { transition: none; }
+  }
+  @media (max-width: 420px) {
+    .cat-sel { display: none; }
+    .btn-del  { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<main class="stage">
+
+  <header class="brand">
+    <div class="wordmark">Tools<span class="dot">.</span><span class="sub">Daily</span></div>
+    <div class="meta">No. 003</div>
+  </header>
+
+  <section class="card" aria-label="Daily Planner">
+    <div class="date-nav">
+      <button class="nav-btn" id="prevDay" aria-label="Previous day">←</button>
+      <div class="date-center">
+        <span class="day-name" id="dayName"></span>
+        <span class="date-full" id="dateStr"></span>
+      </div>
+      <button class="nav-btn" id="nextDay" aria-label="Next day">→</button>
+      <input type="date" class="jump-input" id="jumpDate" aria-label="Jump to date">
+    </div>
+    <div class="hour-grid" id="hourGrid" role="list" aria-label="Hour schedule"></div>
+  </section>
+
+  <section class="card heat-card" aria-label="Activity heatmap">
+    <div class="heat-head">
+      <span class="heat-title">Activity</span>
+      <span class="heat-sub">last 4 weeks</span>
+    </div>
+    <div id="heatmap"></div>
+  </section>
+
+  <footer class="foot">
+    <a href="index.html">← Calculator</a>
+    <span>MMXXVI</span>
+  </footer>
+
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://calculator-api-beige.vercel.app/api/tasks';
+
+  const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+
+  const CATS = {
+    work:     { label: 'Work',     color: '#4A7FA5' },
+    personal: { label: 'Personal', color: '#B65A33' },
+    health:   { label: 'Health',   color: '#5A8A5A' },
+    general:  { label: 'General',  color: '#8C8170' },
+  };
+
+  // ── State ──────────────────────────────────────────────────────────────────
+
+  const state = {
+    date:        '',
+    tasks:       {},   // { hour: taskObject }
+    editingHour: null,
+  };
+
+  // ── Date helpers ──────────────────────────────────────────────────────────
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function parseLocal(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function offset(str, delta) {
+    const d = parseLocal(str);
+    d.setDate(d.getDate() + delta);
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+
+  function updateHeader() {
+    const d = parseLocal(state.date);
+    document.getElementById('dayName').textContent = DAYS[d.getDay()];
+    document.getElementById('dateStr').textContent =
+      `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    document.getElementById('jumpDate').value = state.date;
+  }
+
+  // ── Load day ──────────────────────────────────────────────────────────────
+
+  async function loadDay(date) {
+    state.date        = date;
+    state.tasks       = {};
+    state.editingHour = null;
+    updateHeader();
+    renderGrid();
+
+    try {
+      const res   = await fetch(`${API}?date=${date}`);
+      const tasks = await res.json();
+      if (Array.isArray(tasks)) tasks.forEach(t => { state.tasks[t.hour] = t; });
+    } catch (_) {}
+
+    renderGrid();
+  }
+
+  // ── Render grid ───────────────────────────────────────────────────────────
+
+  function renderGrid() {
+    const grid    = document.getElementById('hourGrid');
+    const nowHour = new Date().getHours();
+    const isToday = state.date === todayStr();
+
+    grid.innerHTML = '';
+
+    for (let h = 0; h < 24; h++) {
+      const task      = state.tasks[h];
+      const isEditing = state.editingHour === h;
+      const isNow     = isToday && nowHour === h;
+
+      const row = document.createElement('div');
+      row.className   = 'hour-row' + (isNow ? ' is-now' : '');
+      row.setAttribute('role', 'listitem');
+      row.dataset.hour = h;
+
+      const lbl = document.createElement('span');
+      lbl.className   = 'hour-label';
+      lbl.textContent = `${pad(h)}:00`;
+      row.appendChild(lbl);
+
+      const content = document.createElement('div');
+      content.className = 'hour-content';
+
+      if (isEditing) {
+        const cat = task?.category || 'general';
+        content.innerHTML = `
+          <input class="task-input" id="ti-${h}" type="text"
+            value="${escHtml(task?.task_text || '')}"
+            placeholder="What's at ${pad(h)}:00?">
+          <select class="cat-sel" id="cs-${h}">
+            ${Object.entries(CATS).map(([k, v]) =>
+              `<option value="${k}"${cat === k ? ' selected' : ''}>${v.label}</option>`
+            ).join('')}
+          </select>
+          <button class="btn-save" onclick="_save(${h})">Save</button>
+          ${task ? `<button class="btn-del" onclick="_del(${task.task_id},${h})">Delete</button>` : ''}
+          <button class="btn-cancel" onclick="_cancel()">×</button>
+        `;
+      } else if (task) {
+        const cat = CATS[task.category] || CATS.general;
+        content.innerHTML = `
+          <span class="cat-dot" style="background:${cat.color}" title="${cat.label}"></span>
+          <span class="task-text${task.completed ? ' is-done' : ''}"
+            onclick="_edit(${h})">${escHtml(task.task_text)}</span>
+          <button class="btn-check${task.completed ? ' is-checked' : ''}"
+            onclick="_toggle(${task.task_id},${h},${!task.completed})"
+            aria-label="${task.completed ? 'Mark undone' : 'Mark done'}">✓</button>
+        `;
+      } else {
+        content.innerHTML = `<span class="empty-hint" onclick="_edit(${h})">+ add task</span>`;
+      }
+
+      row.appendChild(content);
+      grid.appendChild(row);
+    }
+
+    if (isToday) {
+      requestAnimationFrame(() => {
+        grid.querySelector('.is-now')?.scrollIntoView({ block: 'center' });
+      });
+    }
+  }
+
+  // ── Actions (global so onclick= can reach them) ───────────────────────────
+
+  window._edit = function(hour) {
+    state.editingHour = hour;
+    renderGrid();
+    requestAnimationFrame(() => document.getElementById(`ti-${hour}`)?.focus());
+  };
+
+  window._cancel = function() {
+    state.editingHour = null;
+    renderGrid();
+  };
+
+  window._save = async function(hour) {
+    const input  = document.getElementById(`ti-${hour}`);
+    const catSel = document.getElementById(`cs-${hour}`);
+    const text   = input?.value?.trim();
+
+    if (!text) { window._cancel(); return; }
+
+    const existing = state.tasks[hour];
+
+    try {
+      if (existing) {
+        const r = await fetch(`${API}?id=${existing.task_id}`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ task_text: text, category: catSel.value }),
+        });
+        state.tasks[hour] = await r.json();
+      } else {
+        const r = await fetch(API, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ date: state.date, hour, task_text: text, category: catSel.value }),
+        });
+        state.tasks[hour] = await r.json();
+      }
+    } catch (_) {}
+
+    state.editingHour = null;
+    renderGrid();
+    loadHeatmap();
+  };
+
+  window._del = async function(id, hour) {
+    try {
+      await fetch(`${API}?id=${id}`, { method: 'DELETE' });
+      delete state.tasks[hour];
+    } catch (_) {}
+    state.editingHour = null;
+    renderGrid();
+    loadHeatmap();
+  };
+
+  window._toggle = async function(id, hour, completed) {
+    try {
+      const r = await fetch(`${API}?id=${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ completed }),
+      });
+      state.tasks[hour] = await r.json();
+    } catch (_) {}
+    renderGrid();
+    loadHeatmap();
+  };
+
+  // ── Keyboard ──────────────────────────────────────────────────────────────
+
+  document.addEventListener('keydown', e => {
+    if (state.editingHour === null) return;
+    if (e.key === 'Enter')  { e.preventDefault(); window._save(state.editingHour); }
+    if (e.key === 'Escape') window._cancel();
+  });
+
+  // ── Heatmap ───────────────────────────────────────────────────────────────
+
+  async function loadHeatmap() {
+    try {
+      const res  = await fetch(`${API}?heatmap=true`);
+      const data = await res.json();
+      renderHeatmap(data);
+    } catch (_) {}
+  }
+
+  function renderHeatmap(byDate) {
+    const wrap    = document.getElementById('heatmap');
+    const todStr  = todayStr();
+    const todDate = parseLocal(todStr);
+
+    // Start from the Monday 4 weeks before today
+    const start = new Date(todDate);
+    start.setDate(start.getDate() - 27);
+    const dow = start.getDay();
+    start.setDate(start.getDate() - (dow === 0 ? 6 : dow - 1));
+
+    const labels = ['M','T','W','T','F','S','S'];
+    let html = `<div class="heat-labels">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
+    html += '<div class="heat-grid">';
+
+    for (let i = 0; i < 28; i++) {
+      const d   = new Date(start);
+      d.setDate(start.getDate() + i);
+      const ds  = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const cnt = byDate[ds] || 0;
+      const future  = ds > todStr;
+      const isToday = ds === todStr;
+
+      let bg;
+      if (future || cnt === 0) bg = 'var(--rule-2)';
+      else if (cnt <= 2)       bg = '#E2CCA0';
+      else if (cnt <= 5)       bg = '#C49A5A';
+      else if (cnt <= 9)       bg = '#B07030';
+      else                     bg = 'var(--accent)';
+
+      html += `<div class="heat-cell${isToday ? ' is-today' : ''}"
+        style="background:${bg};opacity:${future ? '0.3' : '1'}"
+        title="${ds}: ${cnt} task${cnt !== 1 ? 's' : ''}"></div>`;
+    }
+
+    html += '</div>';
+    wrap.innerHTML = html;
+  }
+
+  // ── Nav wiring ────────────────────────────────────────────────────────────
+
+  document.getElementById('prevDay').addEventListener('click', () => loadDay(offset(state.date, -1)));
+  document.getElementById('nextDay').addEventListener('click', () => loadDay(offset(state.date, 1)));
+  document.getElementById('jumpDate').addEventListener('change', e => {
+    if (e.target.value) loadDay(e.target.value);
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  loadDay(todayStr());
+  loadHeatmap();
+
+})();
+</script>
+
+</body>
+</html>
