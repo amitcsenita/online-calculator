@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Calculate · Scientific</title>
-<meta name="description" content="A beautiful scientific calculator." />
+<title>Calculate</title>
+<meta name="description" content="A small, beautiful four-function calculator." />
 <meta name="theme-color" content="#F1EBDF" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,6 +48,7 @@
     font-family: 'Geist', system-ui, -apple-system, sans-serif;
     color: var(--ink);
     background: var(--paper);
+    /* Warm paper backdrop with a soft vignette + subtle grain */
     background-image:
       radial-gradient(ellipse 70% 60% at 50% 30%, #F7F1E4 0%, var(--paper) 55%, #E9E0CC 100%),
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -60,8 +61,10 @@
     padding: clamp(16px, 4vw, 40px);
   }
 
+  /* ——————————— Layout ——————————— */
+
   .stage {
-    width: min(560px, 100%);
+    width: min(420px, 100%);
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -82,17 +85,10 @@
     letter-spacing: .005em;
     color: var(--ink);
   }
-  .wordmark .dot { color: var(--accent); font-style: normal; margin-left: 2px; }
-  .wordmark .sub {
-    font-family: 'Geist', sans-serif;
+  .wordmark .dot {
+    color: var(--accent);
     font-style: normal;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin-left: 10px;
-    vertical-align: middle;
+    margin-left: 2px;
   }
   .meta {
     font-size: 11px;
@@ -102,6 +98,8 @@
     font-weight: 500;
   }
 
+  /* ——————————— Card ——————————— */
+
   .card {
     background: linear-gradient(180deg, var(--paper-2) 0%, #F4EEDD 100%);
     border: 1px solid var(--rule-2);
@@ -110,14 +108,21 @@
     box-shadow: var(--shadow-card);
     position: relative;
   }
+  /* Top sewn-paper rule */
   .card::before {
     content: "";
     position: absolute;
     inset: 10px 14px auto 14px;
     height: 1px;
-    background: repeating-linear-gradient(90deg, transparent 0 5px, var(--rule) 5px 8px);
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      var(--rule) 5px 8px
+    );
     opacity: .55;
   }
+
+  /* ——————————— Display ——————————— */
 
   .display {
     padding: 10px 8px 18px;
@@ -127,33 +132,11 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
-    min-height: 100px;
+    min-height: 120px;
     justify-content: flex-end;
     text-align: right;
     overflow: hidden;
-    position: relative;
   }
-  .mode-badge {
-    position: absolute;
-    top: 2px;
-    left: 0;
-    font-family: 'Geist', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    cursor: pointer;
-    padding: 2px 7px;
-    background: rgba(182, 90, 51, .08);
-    border-radius: 6px;
-    border: 1px solid rgba(182, 90, 51, .2);
-    user-select: none;
-    transition: background .12s;
-    line-height: 1.6;
-  }
-  .mode-badge:hover { background: rgba(182, 90, 51, .16); }
-
   .expr {
     font-family: 'Geist', sans-serif;
     font-feature-settings: "tnum" 1;
@@ -173,7 +156,7 @@
     font-feature-settings: "tnum" 1, "lnum" 1;
     color: var(--ink);
     line-height: 1;
-    font-size: clamp(44px, 10vw, 60px);
+    font-size: clamp(54px, 14vw, 72px);
     letter-spacing: -.01em;
     white-space: nowrap;
     overflow: hidden;
@@ -181,14 +164,16 @@
     max-width: 100%;
     transition: font-size .12s ease;
   }
-  .value.shrink-1 { font-size: clamp(36px, 8vw, 48px); }
-  .value.shrink-2 { font-size: clamp(28px, 6vw, 38px); }
-  .value.shrink-3 { font-size: clamp(20px, 5vw, 28px); }
+  .value.shrink-1 { font-size: clamp(44px, 11vw, 58px); }
+  .value.shrink-2 { font-size: clamp(34px, 9vw,  46px); }
+  .value.shrink-3 { font-size: clamp(26px, 7vw,  36px); }
+
+  /* ——————————— Keypad ——————————— */
 
   .keys {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
   }
 
   button.key {
@@ -197,13 +182,13 @@
     cursor: pointer;
     font-family: 'Geist', sans-serif;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 22px;
     color: var(--ink);
     background: var(--key-bg);
     border: 1px solid var(--rule-2);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 0;
-    height: 52px;
+    height: 60px;
     display: grid;
     place-items: center;
     box-shadow: var(--shadow-key);
@@ -214,7 +199,7 @@
       color .14s ease,
       border-color .14s ease;
     user-select: none;
-    line-height: 1.2;
+    position: relative;
   }
   button.key:hover { background: var(--key-bg-h); }
   button.key:active,
@@ -228,40 +213,21 @@
     outline-offset: 2px;
   }
 
-  button.key sup {
-    font-size: 0.6em;
-    vertical-align: super;
-    line-height: 0;
-  }
-
-  /* scientific function keys — warm tint to distinguish from digit/util */
-  button.key.sci {
-    background: #F6F0E4;
-    color: var(--ink-2);
-    border-color: var(--rule-2);
-    font-size: 13px;
-  }
-  button.key.sci:hover { background: #EEE5D4; }
-  button.key.sci:active,
-  button.key.sci.is-pressed {
-    background: #E5D9C4;
-    box-shadow: var(--shadow-key-active);
-    transform: translateY(1px);
-  }
-
+  /* digit keys use the elegant serif italic */
   button.key.digit,
   button.key.dot {
     font-family: 'Instrument Serif', serif;
     font-style: italic;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 400;
     color: var(--ink);
   }
 
+  /* utility row */
   button.key.util {
     background: transparent;
     color: var(--ink-2);
-    font-size: 14px;
+    font-size: 18px;
     box-shadow: none;
     border-color: var(--rule);
   }
@@ -272,11 +238,12 @@
     box-shadow: none;
   }
 
+  /* operator keys: terracotta accent */
   button.key.op {
     color: var(--accent);
     font-family: 'Instrument Serif', serif;
     font-style: italic;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 400;
     border-color: #E8D6C4;
     background: #FBF3E8;
@@ -288,28 +255,25 @@
     border-color: var(--accent-2);
   }
   button.key.op.is-selected:hover { background: var(--accent-2); }
-  /* xʸ uses Geist since it has superscript markup */
-  button.key.op[data-op="pow"] {
-    font-family: 'Geist', sans-serif;
-    font-style: normal;
-    font-size: 14px;
-    font-weight: 500;
-  }
 
+  /* equals */
   button.key.eq {
     background: var(--ink);
     color: var(--paper-2);
     border-color: #000;
     font-family: 'Instrument Serif', serif;
     font-style: italic;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 400;
   }
   button.key.eq:hover { background: #2A231D; }
   button.key.eq:active,
   button.key.eq.is-pressed { background: #0E0B09; }
 
-  button.key.zero { grid-column: span 2; }
+  /* span-2 for zero */
+  button.key.zero { grid-column: span 2; justify-items: start; }
+
+  /* ——————————— Footer ——————————— */
 
   footer.foot {
     display: flex;
@@ -321,12 +285,24 @@
     text-transform: uppercase;
     color: var(--muted);
   }
-  footer.foot a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color .12s;
+  footer.foot kbd {
+    font-family: 'Geist', sans-serif;
+    font-size: 10px;
+    background: rgba(0,0,0,.04);
+    border: 1px solid var(--rule);
+    border-bottom-width: 1.5px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: var(--ink-2);
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 500;
   }
-  footer.foot a:hover { color: var(--ink-2); }
+
+  /* Reduce-motion respect */
+  @media (prefers-reduced-motion: reduce) {
+    button.key { transition: none; }
+  }
 
   /* ——————————— History ——————————— */
 
@@ -404,16 +380,12 @@
     padding: 14px 0;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    button.key { transition: none; }
-  }
-
-  @media (max-width: 420px) {
-    .card { padding: 14px; border-radius: 18px; }
-    button.key { height: 46px; font-size: 12px; }
-    button.key.digit, button.key.dot { font-size: 20px; }
-    button.key.sci { font-size: 11px; }
-    .keys { gap: 6px; }
+  /* Compact phones */
+  @media (max-width: 360px) {
+    .card { padding: 16px; border-radius: 18px; }
+    button.key { height: 54px; font-size: 20px; }
+    button.key.digit, button.key.dot { font-size: 25px; }
+    .keys { gap: 8px; }
   }
 </style>
 </head>
@@ -422,74 +394,40 @@
 <main class="stage">
 
   <header class="brand">
-    <div class="wordmark">Calculate<span class="dot">.</span><span class="sub">Sci</span></div>
-    <div class="meta">No. 002</div>
+    <div class="wordmark">Calculate<span class="dot">.</span></div>
+    <div class="meta">No. 001</div>
   </header>
 
-  <section class="card" aria-label="Scientific Calculator">
+  <section class="card" aria-label="Calculator">
     <div class="display" aria-live="polite">
-      <button class="mode-badge" id="modeBadge" title="Click to toggle DEG / RAD">DEG</button>
       <div class="expr" id="expr">&nbsp;</div>
       <div class="value" id="value">0</div>
     </div>
 
     <div class="keys" role="group" aria-label="Keypad">
-
-      <!-- Row 1: trig -->
-      <button class="key sci" data-fn="sin"      aria-label="Sine">sin</button>
-      <button class="key sci" data-fn="cos"      aria-label="Cosine">cos</button>
-      <button class="key sci" data-fn="tan"      aria-label="Tangent">tan</button>
-      <button class="key sci" data-fn="log"      aria-label="Log base 10">log</button>
-      <button class="key sci" data-fn="ln"       aria-label="Natural log">ln</button>
-
-      <!-- Row 2: inverse trig + roots -->
-      <button class="key sci" data-fn="asin"     aria-label="Inverse sine">sin<sup>−1</sup></button>
-      <button class="key sci" data-fn="acos"     aria-label="Inverse cosine">cos<sup>−1</sup></button>
-      <button class="key sci" data-fn="atan"     aria-label="Inverse tangent">tan<sup>−1</sup></button>
-      <button class="key sci" data-fn="sqrt"     aria-label="Square root">√x</button>
-      <button class="key sci" data-fn="sq"       aria-label="Square">x<sup>2</sup></button>
-
-      <!-- Row 3: constants + more functions -->
-      <button class="key sci" data-constant="pi" aria-label="Pi">π</button>
-      <button class="key sci" data-constant="e"  aria-label="Euler's number">e</button>
-      <button class="key sci" data-fn="tenx"     aria-label="10 to the x">10<sup>x</sup></button>
-      <button class="key sci" data-fn="ex"       aria-label="e to the x">e<sup>x</sup></button>
-      <button class="key sci" data-fn="recip"    aria-label="Reciprocal">1/x</button>
-
-      <!-- Row 4: utility -->
       <button class="key util" data-action="clear"     aria-label="All clear">AC</button>
       <button class="key util" data-action="sign"      aria-label="Toggle sign">±</button>
       <button class="key util" data-action="percent"   aria-label="Percent">%</button>
-      <button class="key sci"  data-fn="fact"          aria-label="Factorial">n!</button>
       <button class="key op"   data-op="divide"        aria-label="Divide">÷</button>
 
-      <!-- Row 5 -->
       <button class="key digit" data-digit="7">7</button>
       <button class="key digit" data-digit="8">8</button>
       <button class="key digit" data-digit="9">9</button>
-      <button class="key util"  data-action="backspace" aria-label="Backspace">⌫</button>
-      <button class="key op"    data-op="multiply"     aria-label="Multiply">×</button>
+      <button class="key op"   data-op="multiply"      aria-label="Multiply">×</button>
 
-      <!-- Row 6 -->
       <button class="key digit" data-digit="4">4</button>
       <button class="key digit" data-digit="5">5</button>
       <button class="key digit" data-digit="6">6</button>
-      <button class="key op"    data-op="pow"          aria-label="x to the power y">x<sup>y</sup></button>
-      <button class="key op"    data-op="subtract"     aria-label="Subtract">−</button>
+      <button class="key op"   data-op="subtract"      aria-label="Subtract">−</button>
 
-      <!-- Row 7 -->
       <button class="key digit" data-digit="1">1</button>
       <button class="key digit" data-digit="2">2</button>
       <button class="key digit" data-digit="3">3</button>
-      <button class="key sci"   data-fn="cbrt"         aria-label="Cube root">∛x</button>
-      <button class="key op"    data-op="add"          aria-label="Add">+</button>
+      <button class="key op"   data-op="add"           aria-label="Add">+</button>
 
-      <!-- Row 8 -->
       <button class="key digit zero" data-digit="0">0</button>
-      <button class="key dot"        data-action="dot"    aria-label="Decimal point">.</button>
-      <button class="key sci"        data-fn="abs"        aria-label="Absolute value">|x|</button>
+      <button class="key dot"        data-action="dot" aria-label="Decimal point">.</button>
       <button class="key eq"         data-action="equals" aria-label="Equals">=</button>
-
     </div>
   </section>
 
@@ -503,8 +441,11 @@
   </section>
 
   <footer class="foot">
-    <a href="index.html">← Home</a>
-    <span>MMXXVI</span>
+    <a href="index.html" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;">← Home</a>
+    <div style="display:flex;gap:16px;">
+      <a href="scientific-calculator.html" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;">Sci →</a>
+      <a href="todo.html" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;">Planner →</a>
+    </div>
   </footer>
 
 </main>
@@ -513,47 +454,44 @@
 (() => {
   'use strict';
 
-  const valueEl   = document.getElementById('value');
-  const exprEl    = document.getElementById('expr');
-  const modeBadge = document.getElementById('modeBadge');
+  const valueEl = document.getElementById('value');
+  const exprEl  = document.getElementById('expr');
 
-  let current           = '0';
-  let stored            = null;
-  let op                = null;
-  let justEvaluated     = false;
-  let pendingNewOperand = false;
-  let angleDeg          = true;
+  // State
+  let current = '0';     // string the user is typing
+  let stored  = null;    // previous number (Number) waiting for an op
+  let op      = null;    // pending operator: 'add' | 'subtract' | 'multiply' | 'divide'
+  let justEvaluated = false; // last action was '=' — typing a digit should reset
 
-  const OP_GLYPH = { add: '+', subtract: '−', multiply: '×', divide: '÷', pow: '^' };
+  const OP_GLYPH = { add: '+', subtract: '−', multiply: '×', divide: '÷' };
 
-  modeBadge.addEventListener('click', () => {
-    angleDeg = !angleDeg;
-    modeBadge.textContent = angleDeg ? 'DEG' : 'RAD';
-  });
+  // ——— Formatting ———
 
-  function toRad(x)   { return angleDeg ? x * Math.PI / 180 : x; }
-  function fromRad(x) { return angleDeg ? x * 180 / Math.PI : x; }
-
-  function formatNumber(n) {
-    if (n === null || n === undefined || n === '') return '0';
-    if (typeof n === 'string') {
-      if (n === '-') return '-';
-      const neg = n.startsWith('-');
-      const raw = neg ? n.slice(1) : n;
+  function formatNumber(numLike) {
+    if (numLike === null || numLike === undefined || numLike === '') return '0';
+    if (typeof numLike === 'string') {
+      // If user is mid-typing, keep their string (preserves trailing ".", "-0.", etc.)
+      // but group the integer portion with commas for readability.
+      if (numLike === '-' ) return '-';
+      const neg = numLike.startsWith('-');
+      const raw = neg ? numLike.slice(1) : numLike;
       const [intPart, decPart] = raw.split('.');
       const grouped = Number(intPart || '0').toLocaleString('en-US');
       let out = grouped;
-      if (n.includes('.')) out += '.' + (decPart ?? '');
+      if (numLike.includes('.')) out += '.' + (decPart ?? '');
       return (neg ? '-' : '') + out;
     }
-    if (!isFinite(n)) return n === Infinity ? '∞' : 'Error';
-    const abs = Math.abs(n);
-    if (abs !== 0 && (abs < 1e-9 || abs >= 1e12)) {
-      return n.toExponential(6).replace('+', '');
+    // Numeric
+    if (!isFinite(numLike)) return 'Error';
+    // Avoid losing precision; cap at ~12 significant digits.
+    const abs = Math.abs(numLike);
+    if (abs !== 0 && (abs < 1e-6 || abs >= 1e12)) {
+      return numLike.toExponential(6).replace('+', '');
     }
-    const rounded = Math.round(n * 1e10) / 1e10;
+    // Round to mitigate float dust (0.1 + 0.2 = 0.3, etc.)
+    const rounded = Math.round(numLike * 1e10) / 1e10;
     const [intPart, decPart] = String(rounded).split('.');
-    const sign   = intPart.startsWith('-') ? '-' : '';
+    const sign = intPart.startsWith('-') ? '-' : '';
     const intAbs = sign ? intPart.slice(1) : intPart;
     const grouped = Number(intAbs).toLocaleString('en-US');
     return sign + grouped + (decPart !== undefined ? '.' + decPart : '');
@@ -571,6 +509,7 @@
     const display = formatNumber(current);
     valueEl.textContent = display;
     fitValue(display);
+
     if (op !== null && stored !== null) {
       exprEl.textContent = `${formatNumber(stored)} ${OP_GLYPH[op]}`;
     } else {
@@ -578,39 +517,43 @@
     }
   }
 
-  function resetIfNeeded() {
-    if (justEvaluated) {
-      current = '0'; stored = null; op = null; justEvaluated = false;
-    }
-    if (pendingNewOperand) {
-      current = '0'; pendingNewOperand = false;
-    }
-  }
+  // ——— Logic ———
 
   function inputDigit(d) {
-    resetIfNeeded();
+    if (justEvaluated) {
+      current = '0';
+      stored = null;
+      op = null;
+      justEvaluated = false;
+    }
     if (current === '0' || current === '-0') {
       current = (current.startsWith('-') ? '-' : '') + d;
     } else if (current === 'Error') {
       current = d;
     } else {
-      if (current.replace('-', '').replace('.', '').length >= 15) return;
+      if (current.replace('-', '').replace('.', '').length >= 14) return;
       current += d;
     }
     render();
   }
 
   function inputDot() {
-    resetIfNeeded();
+    if (justEvaluated) {
+      current = '0';
+      stored = null;
+      op = null;
+      justEvaluated = false;
+    }
     if (current === 'Error') current = '0';
     if (!current.includes('.')) {
-      current = (current === '' || current === '-') ? current + '0.' : current + '.';
+      current = (current === '' || current === '-') ? (current + '0.') : current + '.';
       render();
     }
   }
 
   function toggleSign() {
-    if (current === 'Error' || current === '0') return;
+    if (current === 'Error') return;
+    if (current === '0') return;
     current = current.startsWith('-') ? current.slice(1) : '-' + current;
     render();
   }
@@ -618,14 +561,23 @@
   function percent() {
     const n = parseFloat(current);
     if (!isFinite(n)) return;
-    const result = (op !== null && stored !== null) ? (stored * n) / 100 : n / 100;
+    // If we have a pending op + stored, percent = stored * n / 100 (typical calculator behaviour).
+    let result;
+    if (op !== null && stored !== null) {
+      result = (stored * n) / 100;
+    } else {
+      result = n / 100;
+    }
     current = String(Math.round(result * 1e10) / 1e10);
     justEvaluated = false;
     render();
   }
 
   function clearAll() {
-    current = '0'; stored = null; op = null; justEvaluated = false; pendingNewOperand = false;
+    current = '0';
+    stored = null;
+    op = null;
+    justEvaluated = false;
     render();
   }
 
@@ -641,71 +593,23 @@
     render();
   }
 
-  function factorial(n) {
-    if (n < 0 || !Number.isInteger(n) || n > 170) return NaN;
-    let r = 1;
-    for (let i = 2; i <= n; i++) r *= i;
-    return r;
-  }
-
-  function applyFn(name) {
-    const n = parseFloat(current);
-    if (isNaN(n)) { error(); return; }
-    let result;
-    switch (name) {
-      case 'sin':   result = Math.sin(toRad(n)); break;
-      case 'cos':   result = Math.cos(toRad(n)); break;
-      case 'tan':   result = Math.tan(toRad(n)); break;
-      case 'asin':  result = fromRad(Math.asin(n)); break;
-      case 'acos':  result = fromRad(Math.acos(n)); break;
-      case 'atan':  result = fromRad(Math.atan(n)); break;
-      case 'log':   result = Math.log10(n); break;
-      case 'ln':    result = Math.log(n); break;
-      case 'sqrt':  result = Math.sqrt(n); break;
-      case 'cbrt':  result = Math.cbrt(n); break;
-      case 'sq':    result = n * n; break;
-      case 'tenx':  result = Math.pow(10, n); break;
-      case 'ex':    result = Math.exp(n); break;
-      case 'recip': result = 1 / n; break;
-      case 'abs':   result = Math.abs(n); break;
-      case 'fact':  result = factorial(n); break;
-      default: return;
-    }
-    if (!isFinite(result) || isNaN(result)) { error(); return; }
-    result = Math.round(result * 1e12) / 1e12;
-    const label = { sin:'sin', cos:'cos', tan:'tan', asin:'sin⁻¹', acos:'cos⁻¹', atan:'tan⁻¹',
-                    log:'log', ln:'ln', sqrt:'√', cbrt:'∛', sq:'sqr', tenx:'10^',
-                    ex:'e^', recip:'1/', abs:'|', fact:'fact' }[name] || name;
-    exprEl.textContent = `${label}(${formatNumber(n)}) =`;
-    saveCalc(exprEl.textContent, formatNumber(result));
-    current = String(result);
-    justEvaluated = true;
-    pendingNewOperand = false;
-    const display = formatNumber(current);
-    valueEl.textContent = display;
-    fitValue(display);
-  }
-
-  function inputConst(name) {
-    if (justEvaluated) { stored = null; op = null; justEvaluated = false; }
-    pendingNewOperand = false;
-    current = name === 'pi' ? String(Math.PI) : String(Math.E);
-    render();
-  }
-
   function setOp(next) {
     if (current === 'Error') return;
     const n = parseFloat(current);
+
     if (stored === null) {
       stored = n;
     } else if (!justEvaluated && op) {
+      // Chain: compute pending op first
       const raw = compute(stored, n, op);
-      if (raw === null || !isFinite(raw) || isNaN(raw)) { error(); return; }
-      stored = Math.round(raw * 1e10) / 1e10;
-      current = String(stored);
+      if (raw === null) { error(); return; }
+      const result = Math.round(raw * 1e10) / 1e10;
+      stored = result;
+      current = String(result);
     }
     op = next;
     justEvaluated = false;
+    // Mark that next digit should start a new operand
     pendingNewOperand = true;
     render();
     flashOp(next);
@@ -715,12 +619,15 @@
     if (op === null || stored === null) return;
     const n = parseFloat(current);
     const raw = compute(stored, n, op);
-    if (raw === null || !isFinite(raw) || isNaN(raw)) { error(); return; }
+    if (raw === null) { error(); return; }
     const result = Math.round(raw * 1e10) / 1e10;
+    // Update the expression line briefly to show the full computation
     exprEl.textContent = `${formatNumber(stored)} ${OP_GLYPH[op]} ${formatNumber(n)} =`;
     saveCalc(exprEl.textContent, formatNumber(result));
     current = String(result);
-    stored = null; op = null; justEvaluated = true; pendingNewOperand = false;
+    stored = null;
+    op = null;
+    justEvaluated = true;
     const display = formatNumber(current);
     valueEl.textContent = display;
     fitValue(display);
@@ -732,18 +639,40 @@
       case 'subtract': return a - b;
       case 'multiply': return a * b;
       case 'divide':   return b === 0 ? null : a / b;
-      case 'pow':      return Math.pow(a, b);
     }
     return null;
   }
 
   function error() {
-    current = 'Error'; stored = null; op = null; justEvaluated = true; pendingNewOperand = false;
+    current = 'Error';
+    stored = null;
+    op = null;
+    justEvaluated = true;
     valueEl.textContent = 'Error';
     fitValue('Error');
     exprEl.innerHTML = '&nbsp;';
-    clearOpFlash();
   }
+
+  // When user picks an op, the next digit press should start a fresh operand.
+  let pendingNewOperand = false;
+  const _inputDigit = inputDigit;
+  inputDigit = function(d) {
+    if (pendingNewOperand) {
+      current = '0';
+      pendingNewOperand = false;
+    }
+    _inputDigit(d);
+  };
+  const _inputDot = inputDot;
+  inputDot = function() {
+    if (pendingNewOperand) {
+      current = '0';
+      pendingNewOperand = false;
+    }
+    _inputDot();
+  };
+
+  // ——— UI wiring ———
 
   function flashOp(next) {
     document.querySelectorAll('button.key.op').forEach(b => {
@@ -756,35 +685,46 @@
 
   document.querySelectorAll('button.key').forEach(btn => {
     btn.addEventListener('click', () => {
-      const { digit, op: o, action, fn, constant } = btn.dataset;
-      if (digit !== undefined)      { inputDigit(digit); clearOpFlash(); return; }
-      if (o)                        { setOp(o); return; }
-      if (fn)                       { applyFn(fn); clearOpFlash(); return; }
-      if (constant)                 { inputConst(constant); clearOpFlash(); return; }
-      if (action === 'dot')         { inputDot(); clearOpFlash(); return; }
-      if (action === 'clear')       { clearAll(); clearOpFlash(); return; }
-      if (action === 'sign')        { toggleSign(); return; }
-      if (action === 'percent')     { percent(); clearOpFlash(); return; }
-      if (action === 'equals')      { equals(); clearOpFlash(); return; }
-      if (action === 'backspace')   { backspace(); return; }
+      const { digit, op: o, action } = btn.dataset;
+      if (digit !== undefined) { inputDigit(digit); clearOpFlash(); return; }
+      if (o)                    { setOp(o); return; }
+      if (action === 'dot')     { inputDot(); clearOpFlash(); return; }
+      if (action === 'clear')   { clearAll(); clearOpFlash(); return; }
+      if (action === 'sign')    { toggleSign(); return; }
+      if (action === 'percent') { percent(); clearOpFlash(); return; }
+      if (action === 'equals')  { equals(); clearOpFlash(); return; }
     });
   });
 
+  // ——— Keyboard ———
+
+  function findKey(selector) { return document.querySelector(selector); }
+  function pressVisual(el) {
+    if (!el) return;
+    el.classList.add('is-pressed');
+    setTimeout(() => el.classList.remove('is-pressed'), 90);
+  }
+
   window.addEventListener('keydown', (e) => {
     const k = e.key;
-    if (/^[0-9]$/.test(k))                      { inputDigit(k); clearOpFlash(); }
-    else if (k === '.')                          { inputDot(); clearOpFlash(); }
-    else if (k === '+')                          { setOp('add'); }
-    else if (k === '-')                          { setOp('subtract'); }
-    else if (k === '*')                          { setOp('multiply'); }
-    else if (k === '/')                          { e.preventDefault(); setOp('divide'); }
-    else if (k === '^')                          { setOp('pow'); }
-    else if (k === 'Enter' || k === '=')         { e.preventDefault(); equals(); clearOpFlash(); }
-    else if (k === 'Backspace')                  { backspace(); }
-    else if (k === 'Escape' || k === 'Delete')   { clearAll(); clearOpFlash(); }
-    else if (k === '%')                          { percent(); clearOpFlash(); }
+    let target = null;
+
+    if (/^[0-9]$/.test(k))        { inputDigit(k); clearOpFlash(); target = findKey(`button[data-digit="${k}"]`); }
+    else if (k === '.')           { inputDot(); clearOpFlash(); target = findKey('button[data-action="dot"]'); }
+    else if (k === '+')           { setOp('add'); target = findKey('button[data-op="add"]'); }
+    else if (k === '-')           { setOp('subtract'); target = findKey('button[data-op="subtract"]'); }
+    else if (k === '*' || k === 'x' || k === 'X') { setOp('multiply'); target = findKey('button[data-op="multiply"]'); }
+    else if (k === '/')           { e.preventDefault(); setOp('divide'); target = findKey('button[data-op="divide"]'); }
+    else if (k === 'Enter' || k === '=') { e.preventDefault(); equals(); clearOpFlash(); target = findKey('button[data-action="equals"]'); }
+    else if (k === 'Backspace')   { backspace(); target = null; }
+    else if (k === 'Escape' || k === 'Delete' || (k === 'c' || k === 'C')) { clearAll(); clearOpFlash(); target = findKey('button[data-action="clear"]'); }
+    else if (k === '%')           { percent(); clearOpFlash(); target = findKey('button[data-action="percent"]'); }
+    else return;
+
+    pressVisual(target);
   });
 
+  // First paint
   render();
 })();
 
