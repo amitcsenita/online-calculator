@@ -885,8 +885,9 @@
     const inp = document.getElementById(`new-cat-inp-${h}`);
     inp?.focus();
     inp?.addEventListener('keydown', e => {
-      if (e.key === 'Enter')  { e.preventDefault(); window._confirmNewCat(h); }
-      if (e.key === 'Escape') window._cancelNewCat(h);
+      // stopPropagation stops Enter bubbling to the document _save listener
+      if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); window._confirmNewCat(h); }
+      if (e.key === 'Escape') { e.stopPropagation(); window._cancelNewCat(h); }
     });
   }
 
@@ -894,6 +895,9 @@
     const inp   = document.getElementById(`new-cat-inp-${h}`);
     const label = inp?.value?.trim();
     if (!label) { window._cancelNewCat(h); return; }
+
+    // Preserve whatever text the user typed before switching to add-label mode
+    const currentText = document.getElementById(`ti-${h}`)?.value ?? '';
 
     const key   = 'c_' + label.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
     const color = CUSTOM_COLORS[Object.keys(CATS).length % CUSTOM_COLORS.length];
@@ -910,6 +914,12 @@
 
     state.editingCat[h] = key;
     renderRow(h); // rebuilds select with new option pre-selected
+
+    // Restore typed text and refocus the task input
+    requestAnimationFrame(() => {
+      const taskInput = document.getElementById(`ti-${h}`);
+      if (taskInput) { taskInput.value = currentText; taskInput.focus(); }
+    });
   };
 
   window._cancelNewCat = function(h) {
