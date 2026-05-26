@@ -606,7 +606,8 @@ footer.foot a:hover { color: var(--ink-2); }
 (() => {
   'use strict';
 
-  const API = 'https://calculator-api-beige.vercel.app/api/tasks';
+  const API         = 'https://calculator-api-beige.vercel.app/api/tasks';
+  const REFLECT_API = 'https://calculator-api-beige.vercel.app/api/reflections';
   let saving     = false;
   let currentUid = null;
 
@@ -624,21 +625,23 @@ footer.foot a:hover { color: var(--ink-2); }
   const CUSTOM_COLORS = ['#7A6FA5','#A5836F','#5A8A8A','#8A7A5A','#6F8A7A','#A57A6F','#7A8A5A'];
 
   // ── State ────────────────────────────────────────────────────────────────────
+  const REFLECT_DEF = () => ({ grade: null, focus: 0, energy: 0, mood: 0, wins: '', fix: '', learn: '' });
   const state = {
     date:        '',
     tasks:       {},
+    reflection:  REFLECT_DEF(),
     editingHour: null,
     editingCat:  {},
     editingPrio: {},
     heatmap:     {},
     filters: {
       hrPreset: 'all', hrStart: 0, hrEnd: 23,
-      cats:   new Set(),
-      prios:  new Set(),
+      cats:  new Set(),
+      prios: new Set(),
     },
   };
 
-  // ── Date helpers ─────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   function pad(n) { return String(n).padStart(2, '0'); }
   function todayStr() {
     const d = new Date();
@@ -655,48 +658,36 @@ footer.foot a:hover { color: var(--ink-2); }
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
-  // ── Priority — localStorage ──────────────────────────────────────────────────
-  function prioStoreKey() { return currentUid ? `priorities_v1_${currentUid}` : null; }
-  function getPriority(date, hour) {
-    const k = prioStoreKey(); if (!k) return 'normal';
-    try { return JSON.parse(localStorage.getItem(k)||'{}')[`${date}_${hour}`] || 'normal'; }
-    catch { return 'normal'; }
-  }
-  function savePriorityLocal(date, hour, prio) {
-    const k = prioStoreKey(); if (!k) return;
-    try {
-      const all = JSON.parse(localStorage.getItem(k)||'{}');
-      if (prio === 'normal') delete all[`${date}_${hour}`];
-      else all[`${date}_${hour}`] = prio;
-      localStorage.setItem(k, JSON.stringify(all));
-    } catch {}
-  }
-  function mergePriorities() {
-    for (const h in state.tasks) {
-      if (state.tasks[h]) state.tasks[h]._prio = getPriority(state.date, h);
-    }
+  function debounce(fn, ms) {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
   }
 
-  // ── Reflection — localStorage ─────────────────────────────────────────────────
-  const REFLECT_DEF = () => ({ grade: null, focus: 0, energy: 0, mood: 0, wins: '', fix: '', learn: '' });
-  function reflStoreKey() { return currentUid ? `reflection_v1_${currentUid}` : null; }
-  function getReflection(date) {
-    const k = reflStoreKey(); if (!k) return REFLECT_DEF();
+  // ── Reflection API ────────────────────────────────────────────────────────────
+  async function loadReflection(date) {
+    state.reflection = REFLECT_DEF();
     try {
-      const all = JSON.parse(localStorage.getItem(k)||'{}');
-      return { ...REFLECT_DEF(), ...(all[date]||{}) };
-    } catch { return REFLECT_DEF(); }
+      const headers = await window.authHeaders();
+      const res  = await fetch(`${REFLECT_API}?date=${date}`, { headers });
+      const data = await res.json();
+      if (data) state.reflection = { ...REFLECT_DEF(), ...data };
+    } catch {}
+    renderReflection();
+    renderAnalyticsToday();
   }
-  function saveReflField(date, field, value) {
-    const k = reflStoreKey(); if (!k) return;
+
+  async function saveReflection(fields) {
     try {
-      const all = JSON.parse(localStorage.getItem(k)||'{}');
-      all[date] = all[date] || {};
-      all[date][field] = value;
-      localStorage.setItem(k, JSON.stringify(all));
+      const headers = await window.authHeaders();
+      const res = await fetch(REFLECT_API, {
+        method: 'POST', headers,
+        body:   JSON.stringify({ date: state.date, ...fields }),
+      });
+      const data = await res.json();
+      if (data) state.reflection = { ...REFLECT_DEF(), ...data };
     } catch {}
   }
+
+  const saveReflectionDebounced = debounce(saveReflection, 800);
 
   // ── Header ────────────────────────────────────────────────────────────────────
   function updateHeader() {
@@ -721,8 +712,8 @@ footer.foot a:hover { color: var(--ink-2); }
     if (f.cats.size > 0 || f.prios.size > 0) {
       const task = state.tasks[h];
       if (!task || !task.task_text) return false;
-      if (f.cats.size > 0  && !f.cats.has(task.category || 'general')) return false;
-      if (f.prios.size > 0 && !f.prios.has(task._prio   || 'normal'))  return false;
+      if (f.cats.size > 0  && !f.cats.has(task.category || 'general'))  return false;
+      if (f.prios.size > 0 && !f.prios.has(task.priority || 'normal')) return false;
     }
     return true;
   }
@@ -787,25 +778,26 @@ footer.foot a:hover { color: var(--ink-2); }
     state.editingHour = null;
     updateHeader();
     renderGrid();
-    renderReflection();
 
-    try {
-      const headers = await window.authHeaders();
-      const res   = await fetch(`${API}?date=${date}`, { headers });
-      const tasks = await res.json();
-      if (Array.isArray(tasks)) tasks.forEach(t => { state.tasks[t.hour] = t; });
-    } catch {}
-
-    mergePriorities();
-    renderGrid();
-    renderAnalyticsToday();
+    // Load tasks and reflection in parallel
+    const [, ] = await Promise.allSettled([
+      (async () => {
+        const headers = await window.authHeaders();
+        const res   = await fetch(`${API}?date=${date}`, { headers });
+        const tasks = await res.json();
+        if (Array.isArray(tasks)) tasks.forEach(t => { state.tasks[t.hour] = t; });
+        renderGrid();
+        renderAnalyticsToday();
+      })(),
+      loadReflection(date),
+    ]);
   }
 
   // ── Content builder ───────────────────────────────────────────────────────────
   function buildContent(h, task, isEditing) {
     if (isEditing) {
-      const cat  = state.editingCat[h]  || task?.category || 'general';
-      const prio = state.editingPrio[h] || task?._prio    || 'normal';
+      const cat  = state.editingCat[h]  || task?.category  || 'general';
+      const prio = state.editingPrio[h] || task?.priority || 'normal';
       return `
         <input class="task-input" id="ti-${h}" type="text"
           value="${escHtml(task?.task_text||'')}"
@@ -829,7 +821,7 @@ footer.foot a:hover { color: var(--ink-2); }
     }
     if (task) {
       const cat  = CATS[task.category] || CATS.general;
-      const prio = task._prio || 'normal';
+      const prio = task.priority || 'normal';
       const prioHtml = prio==='high'
         ? `<span class="prio-badge high" title="High priority">↑</span>`
         : prio==='low'
@@ -853,7 +845,7 @@ footer.foot a:hover { color: var(--ink-2); }
     const isNow     = state.date === todayStr() && new Date().getHours() === h;
     const isEditing = state.editingHour === h;
     const task      = state.tasks[h];
-    const prio      = task?._prio || 'normal';
+    const prio      = task?.priority || 'normal';
     row.className   = 'hour-row'
       + (isNow ? ' is-now' : '')
       + (task && prio==='high' && !isNow ? ' prio-high' : '')
@@ -890,7 +882,7 @@ footer.foot a:hover { color: var(--ink-2); }
       const isNow     = isToday && nowHour === h;
       const isEditing = state.editingHour === h;
       const task      = state.tasks[h];
-      const prio      = task?._prio || 'normal';
+      const prio      = task?.priority || 'normal';
       const visible   = isVisible(h);
       if (visible) visibleCount++;
 
@@ -937,7 +929,7 @@ footer.foot a:hover { color: var(--ink-2); }
   window._edit = function(h) {
     const prev = state.editingHour;
     state.editingHour = h;
-    state.editingPrio[h] = state.tasks[h]?._prio || 'normal';
+    state.editingPrio[h] = state.tasks[h]?.priority || 'normal';
     if (prev !== null && prev !== h) renderRow(prev);
     renderRow(h);
     requestAnimationFrame(() => document.getElementById(`ti-${h}`)?.focus());
@@ -968,26 +960,23 @@ footer.foot a:hover { color: var(--ink-2); }
     const existing = state.tasks[h];
     saving = true;
     state.editingHour = null;
-    state.tasks[h] = { ...(existing||{}), task_text: text, category, _prio: priority };
+    state.tasks[h] = { ...(existing||{}), task_text: text, category, priority };
     renderRow(h);
-    savePriorityLocal(state.date, h, priority);
 
     try {
       const headers = await window.authHeaders();
       if (existing?.task_id) {
         const r = await fetch(`${API}?id=${existing.task_id}`, {
           method: 'PATCH', headers,
-          body:   JSON.stringify({ task_text: text, category }),
+          body:   JSON.stringify({ task_text: text, category, priority }),
         });
-        const upd = await r.json();
-        state.tasks[h] = { ...upd, _prio: priority };
+        state.tasks[h] = await r.json();
       } else {
         const r = await fetch(API, {
           method: 'POST', headers,
-          body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category }),
+          body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category, priority }),
         });
-        const cre = await r.json();
-        state.tasks[h] = { ...cre, _prio: priority };
+        state.tasks[h] = await r.json();
       }
     } catch {}
 
@@ -1003,22 +992,19 @@ footer.foot a:hover { color: var(--ink-2); }
       const headers = await window.authHeaders();
       await fetch(`${API}?id=${id}`, { method: 'DELETE', headers });
       delete state.tasks[h];
-      savePriorityLocal(state.date, h, 'normal');
     } catch {}
     saving = false; renderRow(h); loadHeatmap(); renderAnalyticsToday();
   };
 
   window._toggle = async function(id, h, completed) {
-    const prev = state.tasks[h];
-    state.tasks[h] = { ...prev, completed };
+    state.tasks[h] = { ...state.tasks[h], completed };
     renderRow(h);
     try {
       const headers = await window.authHeaders();
       const r = await fetch(`${API}?id=${id}`, {
         method: 'PATCH', headers, body: JSON.stringify({ completed }),
       });
-      const upd = await r.json();
-      state.tasks[h] = { ...upd, _prio: prev._prio };
+      state.tasks[h] = await r.json();
     } catch {}
     renderRow(h); loadHeatmap(); renderAnalyticsToday();
   };
@@ -1136,8 +1122,7 @@ footer.foot a:hover { color: var(--ink-2); }
 
   // ── Reflection ────────────────────────────────────────────────────────────────
   function renderReflection() {
-    if (!currentUid) return;
-    const r = getReflection(state.date);
+    const r = state.reflection;
     // Grade
     document.querySelectorAll('.grade-pill').forEach(p =>
       p.classList.toggle('active', p.dataset.grade === r.grade));
@@ -1154,28 +1139,33 @@ footer.foot a:hover { color: var(--ink-2); }
         const ci = i;
         b.addEventListener('click', () => {
           const newVal = (val === ci) ? ci-1 : ci;
-          saveReflField(state.date, key, newVal);
+          state.reflection[key] = newVal;
+          saveReflection({ [key]: newVal });
           renderReflection(); renderAnalyticsToday();
         });
         dots.appendChild(b);
       }
     });
-    // Textareas
+    // Textareas (only update if not focused to avoid cursor jump)
     document.querySelectorAll('.reflect-cell textarea').forEach(t => {
-      t.value = r[t.dataset.key] || '';
+      if (document.activeElement !== t) t.value = r[t.dataset.key] || '';
     });
   }
 
   document.getElementById('gradeRow').addEventListener('click', e => {
     const btn = e.target.closest('.grade-pill');
     if (!btn) return;
-    const r = getReflection(state.date);
-    saveReflField(state.date, 'grade', r.grade === btn.dataset.grade ? null : btn.dataset.grade);
+    const newGrade = state.reflection.grade === btn.dataset.grade ? null : btn.dataset.grade;
+    state.reflection.grade = newGrade;
+    saveReflection({ grade: newGrade });
     renderReflection(); renderAnalyticsToday();
   });
 
   document.querySelectorAll('.reflect-cell textarea').forEach(t => {
-    t.addEventListener('input', () => saveReflField(state.date, t.dataset.key, t.value));
+    t.addEventListener('input', () => {
+      state.reflection[t.dataset.key] = t.value;
+      saveReflectionDebounced({ [t.dataset.key]: t.value });
+    });
   });
 
   // ── Analytics: Today ──────────────────────────────────────────────────────────
@@ -1190,10 +1180,10 @@ footer.foot a:hover { color: var(--ink-2); }
       total++;
       if (t.completed) done++;
       catCounts[t.category || 'general'] = (catCounts[t.category || 'general'] || 0) + 1;
-      prioCounts[t._prio || 'normal']++;
+      prioCounts[t.priority || 'normal']++;
     }
 
-    const r   = getReflection(state.date);
+    const r   = state.reflection;
     const pct = total > 0 ? Math.round((done/total)*100) : 0;
 
     const maxCat = Math.max(...Object.values(catCounts), 1);
