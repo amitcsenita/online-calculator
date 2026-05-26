@@ -598,16 +598,26 @@
     if (isEditing) wireAutoSave(h);
   }
 
-  // ── Auto-save: fires on input blur (200ms delay lets Delete click register)
+  // ── Auto-save: fires when focus leaves the entire edit row
+  // Checks activeElement after delay — skips save if focus moved to another
+  // control in the same row (category select, delete button, cancel button).
 
   function wireAutoSave(h) {
-    const input = document.getElementById(`ti-${h}`);
+    const input  = document.getElementById(`ti-${h}`);
+    const catSel = document.getElementById(`cs-${h}`);
     if (!input) return;
-    input.addEventListener('blur', () => {
+
+    function onBlur() {
       setTimeout(() => {
+        const row     = document.querySelector(`.hour-row[data-hour="${h}"]`);
+        const focused = document.activeElement;
+        if (row && row.contains(focused)) return; // focus still inside row
         if (state.editingHour === h && !saving) window._save(h);
       }, 200);
-    });
+    }
+
+    input.addEventListener('blur', onBlur);
+    if (catSel) catSel.addEventListener('blur', onBlur);
   }
 
   // ── Full grid render (only on date change / initial load) ─────────────────
