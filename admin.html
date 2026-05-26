@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Admin · Tools</title>
+<meta name="theme-color" content="#F1EBDF" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<style>
+  :root {
+    --paper:    #F1EBDF;
+    --paper-2:  #FAF6EC;
+    --ink:      #1B1714;
+    --ink-2:    #4B4239;
+    --muted:    #8C8170;
+    --rule:     #D9CFBE;
+    --rule-2:   #E7DFCE;
+    --accent:   #B65A33;
+    --accent-2: #9A4825;
+    --shadow-card:
+       0 1px 0 rgba(255,255,255,.7) inset,
+       0 -1px 0 rgba(0,0,0,.04) inset,
+       0 30px 60px -30px rgba(50,35,20,.25),
+       0 8px 18px -10px rgba(50,35,20,.18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Geist', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    background-image:
+      radial-gradient(ellipse 70% 60% at 50% 30%, #F7F1E4 0%, var(--paper) 55%, #E9E0CC 100%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-blend-mode: multiply;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    padding: clamp(16px, 4vw, 40px);
+  }
+
+  .stage {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 40px;
+  }
+
+  header.brand {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 6px;
+  }
+  .wordmark {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .wordmark .dot  { color: var(--accent); font-style: normal; }
+  .wordmark .sub  {
+    font-family: 'Geist', sans-serif; font-style: normal;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    letter-spacing: .12em; text-transform: uppercase; margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  .card {
+    background: linear-gradient(180deg, var(--paper-2) 0%, #F4EEDD 100%);
+    border: 1px solid var(--rule-2);
+    border-radius: 22px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 10px 14px auto 14px;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, transparent 0 5px, var(--rule) 5px 8px);
+    opacity: .55;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .tab {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background .10s, color .10s;
+  }
+  .tab:hover { background: rgba(0,0,0,.03); }
+  .tab.active {
+    background: var(--ink);
+    color: var(--paper-2);
+    border-color: var(--ink);
+  }
+
+  /* ── Date picker row ── */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .filter-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .jump-input {
+    font-family: 'Geist', sans-serif; font-size: 12px;
+    background: transparent; border: 1px solid var(--rule);
+    border-radius: 8px; padding: 5px 10px; color: var(--ink-2);
+    outline: none; cursor: pointer; color-scheme: light;
+  }
+  .jump-input:focus { border-color: var(--accent); }
+
+  /* ── Summary grid ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .summary-card {
+    background: rgba(0,0,0,.02);
+    border: 1px solid var(--rule-2);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .summary-uid {
+    font-size: 11px; color: var(--muted); font-weight: 500;
+    letter-spacing: .04em; margin-bottom: 8px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .summary-counts { display: flex; gap: 16px; }
+  .summary-stat { display: flex; flex-direction: column; gap: 2px; }
+  .summary-num {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 28px; color: var(--accent); line-height: 1;
+  }
+  .summary-key {
+    font-size: 10px; color: var(--muted); letter-spacing: .08em;
+    text-transform: uppercase; font-weight: 500;
+  }
+
+  /* ── Data table ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 8px 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .data-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--rule-2);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(0,0,0,.015); }
+  .uid-cell {
+    font-size: 11px; color: var(--muted); font-family: monospace;
+    max-width: 100px; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .result-cell {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 16px; color: var(--ink); white-space: nowrap;
+  }
+  .done-badge {
+    display: inline-block;
+    font-size: 10px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 20px;
+  }
+  .done-badge.yes { background: rgba(90,138,90,.12); color: #3A6A3A; }
+  .done-badge.no  { background: rgba(0,0,0,.05); color: var(--muted); }
+
+  .section-label {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 18px; color: var(--ink); margin-bottom: 16px;
+  }
+  .empty-state {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 14px; color: var(--muted); text-align: center;
+    padding: 24px 0;
+  }
+  .refresh-btn {
+    appearance: none; background: none;
+    border: 1px solid var(--rule); border-radius: 8px;
+    padding: 5px 12px; font-family: 'Geist', sans-serif;
+    font-size: 11px; font-weight: 500; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); cursor: pointer;
+    margin-left: auto; display: block; margin-bottom: 16px;
+    transition: color .12s, border-color .12s;
+  }
+  .refresh-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  footer.foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 8px; font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  footer.foot a { color: var(--muted); text-decoration: none; }
+  footer.foot a:hover { color: var(--ink-2); }
+
+  #denied {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 20px; color: var(--muted); text-align: center;
+    padding: 32px 0;
+  }
+</style>
+</head>
+<body>
+
+<main class="stage">
+
+  <header class="brand">
+    <div class="wordmark">Tools<span class="dot">.</span><span class="sub">Admin</span></div>
+    <div id="authArea" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;">…</div>
+  </header>
+
+  <section class="card" id="mainCard">
+    <div class="empty-state">Loading…</div>
+  </section>
+
+  <footer class="foot">
+    <a href="index.html">← Home</a>
+    <span>MMXXVI</span>
+  </footer>
+
+</main>
+
+<script src="firebase-auth.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://calculator-api-beige.vercel.app/api/admin';
+
+  let currentTab  = 'summary';
+  let currentDate = todayStr();
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function shortUid(uid) {
+    return uid ? uid.slice(0, 8) + '…' : '—';
+  }
+
+  // ── Auth gate ──────────────────────────────────────────────────────────────
+
+  window.onAuthReady = async function(user) {
+    if (!user) {
+      window.showAuthGate('mainCard');
+      return;
+    }
+    // Check if admin by calling the API — it will 403 if not
+    const headers = await window.authHeaders();
+    const probe = await fetch(`${API}?resource=summary`, { headers });
+    if (probe.status === 403) {
+      document.getElementById('mainCard').innerHTML =
+        '<div id="denied">Access restricted to admin account.</div>';
+      return;
+    }
+    renderShell();
+    loadTab('summary');
+  };
+
+  // ── Shell ──────────────────────────────────────────────────────────────────
+
+  function renderShell() {
+    const card = document.getElementById('mainCard');
+    card.innerHTML = `
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('summary')">Summary</button>
+        <button class="tab" onclick="switchTab('calculations')">Calculations</button>
+        <button class="tab" onclick="switchTab('tasks')">Tasks</button>
+      </div>
+      <div id="tabContent"></div>`;
+  }
+
+  window.switchTab = function(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(b =>
+      b.classList.toggle('active', b.textContent.toLowerCase() === tab)
+    );
+    loadTab(tab);
+  };
+
+  // ── Loaders ───────────────────────────────────────────────────────────────
+
+  async function loadTab(tab) {
+    const content = document.getElementById('tabContent');
+    if (!content) return;
+    content.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    const headers = await window.authHeaders();
+
+    if (tab === 'summary') {
+      const r    = await fetch(`${API}?resource=summary`, { headers });
+      const data = await r.json();
+      renderSummary(data);
+    } else if (tab === 'calculations') {
+      const r    = await fetch(`${API}?resource=calculations`, { headers });
+      const data = await r.json();
+      renderCalculations(Array.isArray(data) ? data : []);
+    } else if (tab === 'tasks') {
+      renderTasksFrame();
+    }
+  }
+
+  // ── Summary ───────────────────────────────────────────────────────────────
+
+  function renderSummary(users) {
+    const content = document.getElementById('tabContent');
+    const entries = Object.entries(users);
+    if (!entries.length) {
+      content.innerHTML = '<div class="empty-state">No data yet</div>';
+      return;
+    }
+    content.innerHTML = `
+      <button class="refresh-btn" onclick="loadTab('summary')">↻ Refresh</button>
+      <div class="summary-grid">${entries.map(([uid, counts]) => `
+        <div class="summary-card">
+          <div class="summary-uid" title="${escHtml(uid)}">${escHtml(shortUid(uid))}</div>
+          <div class="summary-counts">
+            <div class="summary-stat">
+              <span class="summary-num">${counts.calculations}</span>
+              <span class="summary-key">Calcs</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-num">${counts.tasks}</span>
+              <span class="summary-key">Tasks</span>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>`;
+  }
+
+  // ── Calculations ──────────────────────────────────────────────────────────
+
+  function renderCalculations(records) {
+    const content = document.getElementById('tabContent');
+    if (!records.length) {
+      content.innerHTML = '<div class="empty-state">No calculations yet</div>';
+      return;
+    }
+    content.innerHTML = `
+      <button class="refresh-btn" onclick="loadTab('calculations')">↻ Refresh</button>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Expression</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>${records.map(r => `
+          <tr>
+            <td class="uid-cell" title="${escHtml(r.user_id || '')}">${escHtml(shortUid(r.user_id))}</td>
+            <td>${escHtml(r.expression)}</td>
+            <td class="result-cell">${escHtml(r.result)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+
+  function renderTasksFrame() {
+    const content = document.getElementById('tabContent');
+    content.innerHTML = `
+      <div class="filter-row">
+        <span class="filter-label">Date</span>
+        <input type="date" class="jump-input" id="taskDate" value="${currentDate}">
+        <button class="refresh-btn" style="margin:0" onclick="loadTasksForDate()">Load</button>
+      </div>
+      <div id="tasksBody"><div class="empty-state">Pick a date and click Load</div></div>`;
+    document.getElementById('taskDate').addEventListener('change', e => {
+      currentDate = e.target.value;
+    });
+  }
+
+  window.loadTasksForDate = async function() {
+    const body    = document.getElementById('tasksBody');
+    if (!body) return;
+    body.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    const headers = await window.authHeaders();
+    const r       = await fetch(`${API}?resource=tasks&date=${currentDate}`, { headers });
+    const tasks   = await r.json();
+
+    if (!Array.isArray(tasks) || !tasks.length) {
+      body.innerHTML = '<div class="empty-state">No tasks for this date</div>';
+      return;
+    }
+
+    const CAT_COLORS = {
+      work: '#4A7FA5', personal: '#B65A33', health: '#5A8A5A', general: '#8C8170'
+    };
+
+    body.innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Hour</th>
+            <th>Task</th>
+            <th>Category</th>
+            <th>Done</th>
+          </tr>
+        </thead>
+        <tbody>${tasks.map(t => `
+          <tr>
+            <td class="uid-cell" title="${escHtml(t.user_id || '')}">${escHtml(shortUid(t.user_id))}</td>
+            <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${pad(t.hour)}:00</td>
+            <td>${escHtml(t.task_text)}</td>
+            <td>
+              <span style="display:inline-flex;align-items:center;gap:5px">
+                <span style="width:7px;height:7px;border-radius:50%;background:${CAT_COLORS[t.category]||'#8C8170'};flex-shrink:0"></span>
+                ${escHtml(t.category)}
+              </span>
+            </td>
+            <td><span class="done-badge ${t.completed ? 'yes' : 'no'}">${t.completed ? 'Yes' : 'No'}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  };
+
+})();
+</script>
+</body>
+</html>
