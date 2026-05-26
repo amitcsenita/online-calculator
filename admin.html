@@ -355,23 +355,23 @@
 
   function renderSummary(users) {
     const content = document.getElementById('tabContent');
-    const entries = Object.entries(users);
-    if (!entries.length) {
+    if (!Array.isArray(users) || !users.length) {
       content.innerHTML = '<div class="empty-state">No data yet</div>';
       return;
     }
     content.innerHTML = `
       <button class="refresh-btn" onclick="loadTab('summary')">↻ Refresh</button>
-      <div class="summary-grid">${entries.map(([uid, counts]) => `
+      <div class="summary-grid">${users.map(u => `
         <div class="summary-card">
-          <div class="summary-uid" title="${escHtml(uid)}">${escHtml(shortUid(uid))}</div>
+          <div class="summary-uid" title="${escHtml(u.email)}">${escHtml(u.name)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.02em">${escHtml(u.email)}</div>
           <div class="summary-counts">
             <div class="summary-stat">
-              <span class="summary-num">${counts.calculations}</span>
+              <span class="summary-num">${u.calculations}</span>
               <span class="summary-key">Calcs</span>
             </div>
             <div class="summary-stat">
-              <span class="summary-num">${counts.tasks}</span>
+              <span class="summary-num">${u.tasks}</span>
               <span class="summary-key">Tasks</span>
             </div>
           </div>
@@ -399,7 +399,7 @@
         </thead>
         <tbody>${records.map(r => `
           <tr>
-            <td class="uid-cell" title="${escHtml(r.user_id || '')}">${escHtml(shortUid(r.user_id))}</td>
+            <td class="uid-cell" title="${escHtml(r.user_id || '')}">${escHtml(r.user_name || '—')}</td>
             <td>${escHtml(r.expression)}</td>
             <td class="result-cell">${escHtml(r.result)}</td>
           </tr>`).join('')}
@@ -454,7 +454,7 @@
         </thead>
         <tbody>${tasks.map(t => `
           <tr>
-            <td class="uid-cell" title="${escHtml(t.user_id || '')}">${escHtml(shortUid(t.user_id))}</td>
+            <td class="uid-cell" title="${escHtml(t.user_id || '')}">${escHtml(t.user_name || '—')}</td>
             <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${pad(t.hour)}:00</td>
             <td>${escHtml(t.task_text)}</td>
             <td>
