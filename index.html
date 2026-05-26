@@ -16,7 +16,7 @@
 
 <style>
   :root {
-    --paper:    #F1EBDF;Æ
+    --paper:    #F1EBDF;
     --paper-2:  #FAF6EC;
     --ink:      #1B1714;
     --ink-2:    #4B4239;
@@ -210,7 +210,7 @@
     font-family: 'Instrument Serif', serif;
     font-style: italic;
     font-size: 18px;
-    color: var(--rule);
+    color: var(--muted);
     width: 24px;
     flex-shrink: 0;
     text-align: center;
@@ -233,9 +233,38 @@
   }
   .tool-arrow {
     font-size: 16px;
-    color: var(--rule);
+    color: var(--muted);
     transition: color .12s, transform .12s;
   }
+  .tool-row { cursor: pointer; }
+
+  /* ── Auth nudge (shown when signed out) ── */
+  .auth-nudge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    background: rgba(182,90,51,.06);
+    border: 1px solid rgba(182,90,51,.15);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--ink-2);
+    gap: 12px;
+  }
+  .auth-nudge-btn {
+    appearance: none; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; padding: 5px 12px;
+    font-family: 'Geist', sans-serif; font-size: 11px;
+    font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    transition: background .12s;
+  }
+  .auth-nudge-btn:hover { background: var(--accent-2); }
+
+  /* ── Admin tool row variant ── */
+  .tool-row.admin-row .tool-num { color: var(--accent); }
+  .tool-row.admin-row .tool-name { color: var(--accent); }
 
   /* ── Footer ── */
   footer.foot {
@@ -329,5 +358,46 @@
 </main>
 
 <script src="firebase-auth.js"></script>
+<script>
+  const ADMIN_EMAIL = 'amitcse.nita@gmail.com';
+
+  window.onAuthReady = function(user) {
+    const toolsCard = document.querySelector('section[aria-label="Available tools"]');
+    const toolNav   = document.querySelector('.tool-list');
+
+    if (!user) {
+      // Inject a sign-in nudge above the tool list
+      const nudge = document.createElement('div');
+      nudge.className = 'auth-nudge';
+      nudge.id = 'authNudge';
+      nudge.innerHTML = `
+        <span>Sign in to save your history and todos across devices</span>
+        <button class="auth-nudge-btn" onclick="fbSignIn()">Sign in</button>`;
+      toolsCard.insertBefore(nudge, toolNav);
+    } else {
+      // Remove nudge if already present
+      document.getElementById('authNudge')?.remove();
+
+      // If admin, append admin dashboard link
+      if (user.email === ADMIN_EMAIL) {
+        const existing = document.getElementById('adminToolRow');
+        if (!existing) {
+          const row = document.createElement('a');
+          row.id        = 'adminToolRow';
+          row.href      = 'admin.html';
+          row.className = 'tool-row admin-row';
+          row.innerHTML = `
+            <span class="tool-num">★</span>
+            <div class="tool-info">
+              <span class="tool-name">Admin Dashboard</span>
+              <span class="tool-desc">All users · calculations · tasks</span>
+            </div>
+            <span class="tool-arrow">→</span>`;
+          toolNav.appendChild(row);
+        }
+      }
+    }
+  };
+</script>
 </body>
 </html>
