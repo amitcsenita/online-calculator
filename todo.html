@@ -496,12 +496,14 @@
   const MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
 
-  const CATS = {
+  let CATS = {
     work:     { label: 'Work',     color: '#4A7FA5' },
     personal: { label: 'Personal', color: '#B65A33' },
     health:   { label: 'Health',   color: '#5A8A5A' },
     general:  { label: 'General',  color: '#8C8170' },
   };
+
+  const CUSTOM_COLORS = ['#7A6FA5','#A5836F','#5A8A8A','#8A7A5A','#6F8A7A','#A57A6F','#7A8A5A'];
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -509,6 +511,7 @@
     date:        '',
     tasks:       {},   // { hour: taskObject }
     editingHour: null,
+    editingCat:  {},   // { hour: currently-selected-category } persists across re-renders
   };
 
   // ── Date helpers ──────────────────────────────────────────────────────────
@@ -570,15 +573,16 @@
 
   function buildContent(h, task, isEditing) {
     if (isEditing) {
-      const cat = task?.category || 'general';
+      const cat = state.editingCat[h] || task?.category || 'general';
       return `
         <input class="task-input" id="ti-${h}" type="text"
           value="${escHtml(task?.task_text || '')}"
           placeholder="What's at ${pad(h)}:00?" autocomplete="off">
-        <select class="cat-sel" id="cs-${h}">
+        <select class="cat-sel" id="cs-${h}" onchange="handleCatChange(${h}, this.value)">
           ${Object.entries(CATS).map(([k, v]) =>
             `<option value="${k}"${cat === k ? ' selected' : ''}>${v.label}</option>`
           ).join('')}
+          <option value="__add__" style="color:var(--accent)">＋ Add label…</option>
         </select>
         ${task ? `<button class="btn-del" id="del-${h}" onclick="_del(${task.task_id},${h})">Delete</button>` : ''}
         <button class="btn-cancel" onclick="_cancel()">×</button>`;
@@ -683,6 +687,7 @@
   window._cancel = function() {
     const h = state.editingHour;
     state.editingHour = null;
+    delete state.editingCat[h];
     if (h !== null) renderRow(h);
   };
 
@@ -691,8 +696,12 @@
     const input    = document.getElementById(`ti-${h}`);
     const catSel   = document.getElementById(`cs-${h}`);
     const text     = input?.value?.trim();
-    // Capture category before any DOM changes — detached nodes can lose value in some browsers
-    const category = catSel?.value || state.tasks[h]?.category || 'general';
+    // Capture category before any DOM changes — prefer editingCat state over DOM value
+    const category = state.editingCat[h]
+                  || (catSel?.value !== '__add__' ? catSel?.value : null)
+                  || state.tasks[h]?.category
+                  || 'general';
+    delete state.editingCat[h];
 
     if (!text) { window._cancel(); return; }
 
@@ -837,6 +846,82 @@
     }).join('')}</div>`;
   }
 
+  // ── Custom categories ─────────────────────────────────────────────────────
+
+  function loadCustomCats(uid) {
+    if (!uid) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(`custom_cats_${uid}`) || '[]');
+      stored.forEach(({ key, label, color }) => { CATS[key] = { label, color }; });
+    } catch (_) {}
+  }
+
+  window.handleCatChange = function(h, val) {
+    if (val === '__add__') {
+      _showAddCat(h);
+    } else {
+      state.editingCat[h] = val;
+    }
+  };
+
+  function _showAddCat(h) {
+    const sel = document.getElementById(`cs-${h}`);
+    if (!sel) return;
+    sel.style.display = 'none';
+
+    const wrap = document.createElement('span');
+    wrap.id = `new-cat-wrap-${h}`;
+    wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center;flex-shrink:0';
+    wrap.innerHTML = `
+      <input id="new-cat-inp-${h}" type="text" class="task-input"
+        style="width:100px;font-size:12px;padding:4px 8px"
+        placeholder="Label name…" maxlength="24" autocomplete="off">
+      <button class="btn-save" style="padding:4px 10px;font-size:12px"
+        onclick="window._confirmNewCat(${h})">✓</button>
+      <button class="btn-cancel"
+        onclick="window._cancelNewCat(${h})">×</button>`;
+    sel.parentNode.insertBefore(wrap, sel.nextSibling);
+
+    const inp = document.getElementById(`new-cat-inp-${h}`);
+    inp?.focus();
+    inp?.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { e.preventDefault(); window._confirmNewCat(h); }
+      if (e.key === 'Escape') window._cancelNewCat(h);
+    });
+  }
+
+  window._confirmNewCat = function(h) {
+    const inp   = document.getElementById(`new-cat-inp-${h}`);
+    const label = inp?.value?.trim();
+    if (!label) { window._cancelNewCat(h); return; }
+
+    const key   = 'c_' + label.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+    const color = CUSTOM_COLORS[Object.keys(CATS).length % CUSTOM_COLORS.length];
+    CATS[key]   = { label, color };
+
+    const uid = firebase.auth().currentUser?.uid;
+    if (uid) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(`custom_cats_${uid}`) || '[]');
+        stored.push({ key, label, color });
+        localStorage.setItem(`custom_cats_${uid}`, JSON.stringify(stored));
+      } catch (_) {}
+    }
+
+    state.editingCat[h] = key;
+    renderRow(h); // rebuilds select with new option pre-selected
+  };
+
+  window._cancelNewCat = function(h) {
+    const wrap = document.getElementById(`new-cat-wrap-${h}`);
+    const sel  = document.getElementById(`cs-${h}`);
+    wrap?.remove();
+    if (sel) {
+      sel.style.display = '';
+      sel.value = state.editingCat[h] || state.tasks[h]?.category || 'general';
+    }
+  };
+
   // ── Nav wiring ────────────────────────────────────────────────────────────
 
   document.getElementById('prevDay').addEventListener('click', () => loadDay(offset(state.date, -1)));
@@ -849,6 +934,7 @@
 
   window.onAuthReady = function(user) {
     if (user) {
+      loadCustomCats(user.uid);
       loadDay(todayStr());
       loadHeatmap();
     } else {
