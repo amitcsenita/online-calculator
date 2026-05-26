@@ -114,6 +114,10 @@ a.wordmark {
   margin-bottom: 14px;
 }
 .section-label::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+.reflect-status { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; white-space: nowrap; }
+.reflect-status.saving { color: var(--muted); }
+.reflect-status.saved  { color: var(--green); }
+.reflect-status.error  { color: var(--accent); }
 .sub-label {
   font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
   color: var(--muted); font-weight: 600; display: block; margin-bottom: 8px;
@@ -540,7 +544,7 @@ footer.foot a:hover { color: var(--ink-2); }
 
   <!-- ── Reflection card ── -->
   <section class="card" id="reflectionSection" aria-label="Daily reflection">
-    <div class="section-label">Reflection</div>
+    <div class="section-label">Reflection <span id="reflectStatus" class="reflect-status"></span></div>
 
     <div class="reflect-top">
       <!-- Grade -->
@@ -659,12 +663,32 @@ footer.foot a:hover { color: var(--ink-2); }
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function debounce(fn, ms) {
-    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    let t;
+    const d = (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    d.cancel = () => clearTimeout(t);
+    return d;
+  }
+
+  function setReflectStatus(s, time) {
+    const el = document.getElementById('reflectStatus');
+    if (!el) return;
+    if (s === 'saving') {
+      el.textContent = 'saving…'; el.className = 'reflect-status saving';
+    } else if (s === 'saved') {
+      const t = time || new Date();
+      el.textContent = `saved ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+      el.className = 'reflect-status saved';
+    } else if (s === 'error') {
+      el.textContent = 'save failed'; el.className = 'reflect-status error';
+    } else {
+      el.textContent = ''; el.className = 'reflect-status';
+    }
   }
 
   // ── Reflection API ────────────────────────────────────────────────────────────
   async function loadReflection(date) {
     state.reflection = REFLECT_DEF();
+    setReflectStatus('idle');
     try {
       const headers = await window.authHeaders();
       const res  = await fetch(`${REFLECT_API}?date=${date}`, { headers });
@@ -676,6 +700,7 @@ footer.foot a:hover { color: var(--ink-2); }
   }
 
   async function saveReflection(fields) {
+    setReflectStatus('saving');
     try {
       const headers = await window.authHeaders();
       const res = await fetch(REFLECT_API, {
@@ -684,7 +709,10 @@ footer.foot a:hover { color: var(--ink-2); }
       });
       const data = await res.json();
       if (data) state.reflection = { ...REFLECT_DEF(), ...data };
-    } catch {}
+      setReflectStatus('saved', new Date());
+    } catch {
+      setReflectStatus('error');
+    }
   }
 
   const saveReflectionDebounced = debounce(saveReflection, 800);
@@ -1164,8 +1192,24 @@ footer.foot a:hover { color: var(--ink-2); }
   document.querySelectorAll('.reflect-cell textarea').forEach(t => {
     t.addEventListener('input', () => {
       state.reflection[t.dataset.key] = t.value;
+      setReflectStatus('saving');
       saveReflectionDebounced({ [t.dataset.key]: t.value });
     });
+    t.addEventListener('blur', () => {
+      saveReflectionDebounced.cancel();
+      saveReflection({ [t.dataset.key]: t.value });
+    });
+  });
+
+  // Flush save when user switches tabs or minimises — prevents data loss on sudden close
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      const active = document.activeElement;
+      if (active && active.tagName === 'TEXTAREA' && active.dataset.key) {
+        saveReflectionDebounced.cancel();
+        saveReflection({ [active.dataset.key]: active.value });
+      }
+    }
   });
 
   // ── Analytics: Today ──────────────────────────────────────────────────────────
