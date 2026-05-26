@@ -466,6 +466,8 @@
   'use strict';
 
   const API = 'https://calculator-api-beige.vercel.app/api/tasks';
+  // saving flag prevents double-saves during async operations
+  let saving = false;
 
   const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTHS = ['January','February','March','April','May','June',
@@ -541,7 +543,62 @@
     renderGrid();
   }
 
-  // ── Render grid ───────────────────────────────────────────────────────────
+  // ── Content builder ───────────────────────────────────────────────────────
+
+  function buildContent(h, task, isEditing) {
+    if (isEditing) {
+      const cat = task?.category || 'general';
+      return `
+        <input class="task-input" id="ti-${h}" type="text"
+          value="${escHtml(task?.task_text || '')}"
+          placeholder="What's at ${pad(h)}:00?" autocomplete="off">
+        <select class="cat-sel" id="cs-${h}">
+          ${Object.entries(CATS).map(([k, v]) =>
+            `<option value="${k}"${cat === k ? ' selected' : ''}>${v.label}</option>`
+          ).join('')}
+        </select>
+        ${task ? `<button class="btn-del" id="del-${h}" onclick="_del(${task.task_id},${h})">Delete</button>` : ''}
+        <button class="btn-cancel" onclick="_cancel()">×</button>`;
+    }
+    if (task) {
+      const cat = CATS[task.category] || CATS.general;
+      return `
+        <span class="cat-dot" style="background:${cat.color}" title="${cat.label}"></span>
+        <span class="task-text${task.completed ? ' is-done' : ''}"
+          onclick="_edit(${h})">${escHtml(task.task_text)}</span>
+        <button class="btn-check${task.completed ? ' is-checked' : ''}"
+          onclick="_toggle(${task.task_id},${h},${!task.completed})"
+          aria-label="${task.completed ? 'Mark undone' : 'Mark done'}">✓</button>`;
+    }
+    return `<span class="empty-hint" onclick="_edit(${h})">+ add task</span>`;
+  }
+
+  // ── Single-row update (avoids full 24-row rebuild) ────────────────────────
+
+  function renderRow(h) {
+    const row = document.querySelector(`.hour-row[data-hour="${h}"]`);
+    if (!row) return;
+    const isNow     = (state.date === todayStr()) && (new Date().getHours() === h);
+    const isEditing = state.editingHour === h;
+    row.className   = 'hour-row' + (isNow ? ' is-now' : '');
+    const content   = row.querySelector('.hour-content');
+    content.innerHTML = buildContent(h, state.tasks[h], isEditing);
+    if (isEditing) wireAutoSave(h);
+  }
+
+  // ── Auto-save: fires on input blur (200ms delay lets Delete click register)
+
+  function wireAutoSave(h) {
+    const input = document.getElementById(`ti-${h}`);
+    if (!input) return;
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (state.editingHour === h && !saving) window._save(h);
+      }, 200);
+    });
+  }
+
+  // ── Full grid render (only on date change / initial load) ─────────────────
 
   function renderGrid() {
     const grid    = document.getElementById('hourGrid');
@@ -551,12 +608,11 @@
     grid.innerHTML = '';
 
     for (let h = 0; h < 24; h++) {
-      const task      = state.tasks[h];
-      const isEditing = state.editingHour === h;
       const isNow     = isToday && nowHour === h;
+      const isEditing = state.editingHour === h;
 
       const row = document.createElement('div');
-      row.className   = 'hour-row' + (isNow ? ' is-now' : '');
+      row.className    = 'hour-row' + (isNow ? ' is-now' : '');
       row.setAttribute('role', 'listitem');
       row.dataset.hour = h;
 
@@ -567,35 +623,8 @@
 
       const content = document.createElement('div');
       content.className = 'hour-content';
-
-      if (isEditing) {
-        const cat = task?.category || 'general';
-        content.innerHTML = `
-          <input class="task-input" id="ti-${h}" type="text"
-            value="${escHtml(task?.task_text || '')}"
-            placeholder="What's at ${pad(h)}:00?">
-          <select class="cat-sel" id="cs-${h}">
-            ${Object.entries(CATS).map(([k, v]) =>
-              `<option value="${k}"${cat === k ? ' selected' : ''}>${v.label}</option>`
-            ).join('')}
-          </select>
-          <button class="btn-save" onclick="_save(${h})">Save</button>
-          ${task ? `<button class="btn-del" onclick="_del(${task.task_id},${h})">Delete</button>` : ''}
-          <button class="btn-cancel" onclick="_cancel()">×</button>
-        `;
-      } else if (task) {
-        const cat = CATS[task.category] || CATS.general;
-        content.innerHTML = `
-          <span class="cat-dot" style="background:${cat.color}" title="${cat.label}"></span>
-          <span class="task-text${task.completed ? ' is-done' : ''}"
-            onclick="_edit(${h})">${escHtml(task.task_text)}</span>
-          <button class="btn-check${task.completed ? ' is-checked' : ''}"
-            onclick="_toggle(${task.task_id},${h},${!task.completed})"
-            aria-label="${task.completed ? 'Mark undone' : 'Mark done'}">✓</button>
-        `;
-      } else {
-        content.innerHTML = `<span class="empty-hint" onclick="_edit(${h})">+ add task</span>`;
-      }
+      content.innerHTML = buildContent(h, state.tasks[h], isEditing);
+      if (isEditing) wireAutoSave(h);
 
       row.appendChild(content);
       grid.appendChild(row);
@@ -608,74 +637,81 @@
     }
   }
 
-  // ── Actions (global so onclick= can reach them) ───────────────────────────
+  // ── Actions ───────────────────────────────────────────────────────────────
 
-  window._edit = function(hour) {
-    state.editingHour = hour;
-    renderGrid();
-    requestAnimationFrame(() => document.getElementById(`ti-${hour}`)?.focus());
+  window._edit = function(h) {
+    const prev = state.editingHour;
+    state.editingHour = h;
+    if (prev !== null && prev !== h) renderRow(prev); // restore old row
+    renderRow(h);
+    requestAnimationFrame(() => document.getElementById(`ti-${h}`)?.focus());
   };
 
   window._cancel = function() {
+    const h = state.editingHour;
     state.editingHour = null;
-    renderGrid();
+    if (h !== null) renderRow(h);
   };
 
-  window._save = async function(hour) {
-    const input  = document.getElementById(`ti-${hour}`);
-    const catSel = document.getElementById(`cs-${hour}`);
+  window._save = async function(h) {
+    if (saving) return;
+    const input  = document.getElementById(`ti-${h}`);
+    const catSel = document.getElementById(`cs-${h}`);
     const text   = input?.value?.trim();
 
     if (!text) { window._cancel(); return; }
 
-    const existing = state.tasks[hour];
+    saving = true;
+    state.editingHour = null;
+    renderRow(h); // show non-editing state immediately (optimistic)
 
+    const existing = state.tasks[h];
     try {
       const headers = await window.authHeaders();
       if (existing) {
         const r = await fetch(`${API}?id=${existing.task_id}`, {
-          method:  'PATCH',
-          headers,
-          body:    JSON.stringify({ task_text: text, category: catSel.value }),
+          method: 'PATCH', headers,
+          body:   JSON.stringify({ task_text: text, category: catSel?.value || existing.category }),
         });
-        state.tasks[hour] = await r.json();
+        state.tasks[h] = await r.json();
       } else {
         const r = await fetch(API, {
-          method:  'POST',
-          headers,
-          body:    JSON.stringify({ date: state.date, hour, task_text: text, category: catSel.value }),
+          method: 'POST', headers,
+          body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category: catSel?.value || 'general' }),
         });
-        state.tasks[hour] = await r.json();
+        state.tasks[h] = await r.json();
       }
     } catch (_) {}
 
-    state.editingHour = null;
-    renderGrid();
+    saving = false;
+    renderRow(h);
     loadHeatmap();
   };
 
-  window._del = async function(id, hour) {
+  window._del = async function(id, h) {
+    saving = true;
+    state.editingHour = null;
+    renderRow(h);
     try {
       const headers = await window.authHeaders();
       await fetch(`${API}?id=${id}`, { method: 'DELETE', headers });
-      delete state.tasks[hour];
+      delete state.tasks[h];
     } catch (_) {}
-    state.editingHour = null;
-    renderGrid();
+    saving = false;
+    renderRow(h);
     loadHeatmap();
   };
 
-  window._toggle = async function(id, hour, completed) {
+  window._toggle = async function(id, h, completed) {
     try {
       const headers = await window.authHeaders();
       const r = await fetch(`${API}?id=${id}`, {
-        method:  'PATCH',
-        headers,
-        body:    JSON.stringify({ completed }),
+        method: 'PATCH', headers,
+        body:   JSON.stringify({ completed }),
       });
-      state.tasks[hour] = await r.json();
+      state.tasks[h] = await r.json();
     } catch (_) {}
-    renderGrid();
+    renderRow(h);
     loadHeatmap();
   };
 
