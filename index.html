@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Amit Kumar · Tools</title>
-<meta name="description" content="Lead Engineer at Target. Personal tools and experiments." />
-<meta name="theme-color" content="#F1EBDF" />
+<meta name="description" content="Personal tools by Amit Kumar — calculator, planner, and more." />
+<meta name="theme-color" content="#C5B69B" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,388 +16,529 @@
 
 <style>
   :root {
-    --paper:    #F1EBDF;
-    --paper-2:  #FAF6EC;
+    --sand:     #C5B69B;
+    --paper:    #F8F3EA;
+    --paper-2:  #FBF8F2;
     --ink:      #1B1714;
     --ink-2:    #4B4239;
-    --muted:    #8C8170;
-    --rule:     #D9CFBE;
-    --rule-2:   #E7DFCE;
+    --muted:    #8C7D6B;
+    --rule:     #B3A590;
+    --rule-2:   #C8BAA8;
     --accent:   #B65A33;
     --accent-2: #9A4825;
-    --shadow-card:
-       0 1px 0 rgba(255,255,255,.7) inset,
-       0 -1px 0 rgba(0,0,0,.04) inset,
-       0 30px 60px -30px rgba(50, 35, 20, .25),
-       0 8px 18px -10px rgba(50, 35, 20, .18);
   }
 
-  *, *::before, *::after { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
+
   body {
-    margin: 0;
     font-family: 'Geist', system-ui, -apple-system, sans-serif;
-    color: var(--ink);
-    background: var(--paper);
+    background: var(--sand);
     background-image:
-      radial-gradient(ellipse 70% 60% at 50% 30%, #F7F1E4 0%, var(--paper) 55%, #E9E0CC 100%),
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-    background-blend-mode: multiply;
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.06  0 0 0 0 0.05  0 0 0 0 0.03  0 0 0 0.07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    color: var(--ink);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100dvh;
-    display: grid;
-    place-items: center;
-    padding: clamp(16px, 4vw, 40px);
   }
 
-  .stage {
-    width: min(480px, 100%);
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 5vw, 64px);
+  }
+
+  /* ── Nav ─────────────────────────────────────────────────────────────────── */
+  .site-nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 28px 0 0;
+  }
+
+  /* Override firebase-auth sign-in button for this page */
+  .site-nav .auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.55);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.7) !important;
+    border-radius: 100px !important;
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--ink-2) !important;
+    letter-spacing: .01em !important;
+    text-transform: none !important;
+    cursor: pointer;
+    transition: background .12s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .site-nav .auth-btn:hover {
+    background: rgba(255,255,255,.75) !important;
+    text-decoration: none !important;
+  }
+  .site-nav .auth-user {
+    background: rgba(255,255,255,.45);
+    border: 1px solid rgba(255,255,255,.6);
+    border-radius: 100px;
+    padding: 5px 14px 5px 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .site-nav .auth-avatar {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 10px !important;
+  }
+  .site-nav .auth-name {
+    font-size: 13px !important;
+    color: var(--ink) !important;
+    font-weight: 500 !important;
+    max-width: 110px !important;
+  }
+
+  /* ── Hero ─────────────────────────────────────────────────────────────────── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+    padding: clamp(40px, 6vw, 72px) 0 clamp(52px, 7vw, 88px);
+  }
+  .hero-headline {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(46px, 5.2vw, 74px);
+    line-height: 1.07;
+    letter-spacing: -.02em;
+    color: var(--ink);
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero-aside {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
   }
-
-  /* ── Header ── */
-  header.brand {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 0 6px;
-  }
-  .wordmark {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-weight: 400;
-    font-size: 30px;
-    line-height: 1;
-    letter-spacing: .005em;
-    color: var(--ink);
-  }
-  .wordmark .dot { color: var(--accent); font-style: normal; margin-left: 2px; }
-  .meta {
+  .hero-byline {
     font-size: 11px;
-    letter-spacing: .14em;
+    font-weight: 600;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--muted);
-    font-weight: 500;
+  }
+  .hero-desc {
+    font-size: 15px;
+    line-height: 1.72;
+    color: var(--ink-2);
   }
 
-  /* ── Card ── */
-  .card {
-    background: linear-gradient(180deg, var(--paper-2) 0%, #F4EEDD 100%);
-    border: 1px solid var(--rule-2);
-    border-radius: 22px;
-    padding: 28px;
-    box-shadow: var(--shadow-card);
-    position: relative;
-  }
-  .card::before {
-    content: "";
-    position: absolute;
-    inset: 10px 14px auto 14px;
-    height: 1px;
-    background: repeating-linear-gradient(90deg, transparent 0 5px, var(--rule) 5px 8px);
-    opacity: .55;
-  }
+  /* ── Tools ───────────────────────────────────────────────────────────────── */
+  .tools-section { padding-bottom: clamp(52px, 7vw, 88px); }
 
-  /* ── About card ── */
-  .about-name {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    font-size: 42px;
-    letter-spacing: -.01em;
-    line-height: 1;
-    color: var(--ink);
-    margin-bottom: 8px;
-  }
-  .about-role {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-2);
-    letter-spacing: .02em;
-    margin-bottom: 2px;
-  }
-  .about-loc {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: .04em;
-    margin-bottom: 20px;
-  }
-  .about-divider {
-    width: 32px;
-    height: 1px;
-    background: var(--rule);
-    margin-bottom: 16px;
-  }
-  .about-bio {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--ink-2);
-    margin: 0 0 20px;
-  }
-  .about-tags {
+  .section-header {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    align-items: center;
+    gap: 16px;
     margin-bottom: 22px;
   }
-  .tag {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    background: rgba(0,0,0,.04);
-    border: 1px solid var(--rule);
-    border-radius: 20px;
-    padding: 3px 10px;
-  }
-  .about-links {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-  }
-  .about-link {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    text-decoration: none;
-    transition: color .12s;
-  }
-  .about-link:hover { color: var(--accent-2); }
-  .about-link-sep {
-    width: 1px;
-    height: 12px;
-    background: var(--rule);
-  }
-
-  /* ── Tools card ── */
-  .tools-label {
+  .section-label {
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: .14em;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 16px;
+    white-space: nowrap;
   }
-  .tool-list {
+  .section-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+    opacity: .45;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  /* ── Tool card ───────────────────────────────────────────────────────────── */
+  .tool-card {
+    background: var(--paper);
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.55);
+    box-shadow:
+      0 2px 0 rgba(255,255,255,.55) inset,
+      0 24px 48px -20px rgba(40,28,14,.18),
+      0 4px 12px -4px rgba(40,28,14,.10);
     display: flex;
     flex-direction: column;
-    gap: 0;
-  }
-  .tool-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 4px;
-    border-bottom: 1px solid var(--rule-2);
     text-decoration: none;
     color: inherit;
-    transition: background .10s;
-    border-radius: 6px;
-    margin: 0 -8px;
-    padding-left: 8px;
-    padding-right: 8px;
+    transition: transform .16s ease, box-shadow .16s ease;
   }
-  .tool-row:last-child { border-bottom: none; }
-  .tool-row:hover { background: rgba(0,0,0,.025); }
-  .tool-row:hover .tool-arrow { color: var(--accent); transform: translateX(3px); }
+  .tool-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 2px 0 rgba(255,255,255,.55) inset,
+      0 32px 56px -20px rgba(40,28,14,.24),
+      0 8px 18px -4px rgba(40,28,14,.13);
+  }
 
+  /* Thumbnail */
+  .tool-thumb {
+    height: 136px;
+    background: var(--paper-2);
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Calculator thumb — grid of squares */
+  .thumb-calc {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
+    padding: 18px 22px;
+    width: 100%;
+    height: 100%;
+  }
+  .thumb-calc span { border-radius: 6px; background: #DDD7CC; }
+  .thumb-calc span.c-dk  { background: #4B4239; }
+  .thumb-calc span.c-acc { background: var(--accent); }
+  .thumb-calc span.c-md  { background: #C4A882; }
+
+  /* Scientific thumb — formula */
+  .thumb-sci {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: .03em;
+    color: var(--ink-2);
+    user-select: none;
+  }
+  .thumb-sci .t-acc { color: var(--accent); }
+
+  /* Planner thumb — bars */
+  .thumb-plan {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    padding: 20px 22px 0;
+    height: 100%;
+    width: 100%;
+  }
+  .thumb-plan span {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: #DDD7CC;
+    min-height: 4px;
+  }
+  .thumb-plan span.p-hi  { background: var(--accent); }
+  .thumb-plan span.p-mid { background: #C4A882; }
+
+  /* Card body */
+  .tool-body {
+    padding: 18px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
   .tool-num {
     font-family: 'Instrument Serif', serif;
     font-style: italic;
-    font-size: 18px;
-    color: var(--muted);
-    width: 24px;
-    flex-shrink: 0;
-    text-align: center;
-  }
-  .tool-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: .02em;
   }
   .tool-name {
-    font-size: 15px;
-    font-weight: 500;
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    font-weight: 400;
     color: var(--ink);
-    letter-spacing: .01em;
+    line-height: 1.2;
+    letter-spacing: -.01em;
   }
   .tool-desc {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--muted);
+    line-height: 1.5;
+    flex: 1;
+    margin-top: 1px;
   }
-  .tool-arrow {
-    font-size: 16px;
-    color: var(--muted);
-    transition: color .12s, transform .12s;
-  }
-  .tool-row { cursor: pointer; }
-
-  /* ── Auth nudge (shown when signed out) ── */
-  .auth-nudge {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    margin-bottom: 14px;
-    background: rgba(182,90,51,.06);
-    border: 1px solid rgba(182,90,51,.15);
-    border-radius: 10px;
-    font-size: 12px;
-    color: var(--ink-2);
-    gap: 12px;
-  }
-  .auth-nudge-btn {
-    appearance: none; background: var(--accent); color: #fff;
-    border: none; border-radius: 7px; padding: 5px 12px;
-    font-family: 'Geist', sans-serif; font-size: 11px;
-    font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-    cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    transition: background .12s;
-  }
-  .auth-nudge-btn:hover { background: var(--accent-2); }
-
-  /* ── Admin tool row variant ── */
-  .tool-row.admin-row .tool-num { color: var(--accent); }
-  .tool-row.admin-row .tool-name { color: var(--accent); }
-
-  /* ── Footer ── */
-  footer.foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 8px;
+  .tool-open {
+    margin-top: 14px;
     font-size: 11px;
+    font-weight: 600;
     letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: gap .14s ease;
+  }
+  .tool-card:hover .tool-open { gap: 10px; }
+
+  /* ── About ───────────────────────────────────────────────────────────────── */
+  .about-section {
+    padding: clamp(32px, 4vw, 48px) 0 clamp(40px, 5vw, 64px);
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .about-left {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .about-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: grid; place-items: center;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(182,90,51,.3);
+  }
+  .about-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 480px;
+  }
+  .about-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .about-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 21px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .about-bio {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    margin-top: 5px;
+  }
+  .about-links {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .icon-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    background: rgba(0,0,0,.07);
+    border: 1px solid rgba(0,0,0,.09);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: background .12s;
+    white-space: nowrap;
+  }
+  .icon-link:hover { background: rgba(0,0,0,.12); }
+  .icon-link svg { flex-shrink: 0; opacity: .75; }
+
+  /* ── Footer ──────────────────────────────────────────────────────────────── */
+  .site-footer {
+    border-top: 1px solid rgba(0,0,0,.1);
+    padding: 18px 0 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .16em;
     text-transform: uppercase;
     color: var(--muted);
   }
 
+  /* ── Responsive ──────────────────────────────────────────────────────────── */
+  @media (max-width: 800px) {
+    .hero { grid-template-columns: 1fr; gap: 22px; padding-bottom: 52px; }
+    .tools-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 540px) {
+    .tools-grid { grid-template-columns: 1fr; }
+    .about-section { flex-direction: column; align-items: flex-start; gap: 20px; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tool-row, .tool-arrow { transition: none; }
+    .tool-card, .tool-open { transition: none; }
   }
 </style>
 </head>
 <body>
 
-<main class="stage">
+<div class="wrap">
+  <nav class="site-nav">
+    <div id="authArea"></div>
+  </nav>
+</div>
 
-  <header class="brand">
-    <div class="wordmark">Tools<span class="dot">.</span></div>
-    <div id="authArea" class="meta">…</div>
-  </header>
+<div class="wrap">
 
-  <!-- About -->
-  <section class="card" aria-label="About">
-    <div class="about-name">Amit Kumar</div>
-    <div class="about-role">Lead Engineer · Target Corporation</div>
-    <div class="about-loc">Bengaluru, Karnataka, India</div>
-    <div class="about-divider"></div>
-    <p class="about-bio">
-      Building distributed systems at scale — currently leading development of a
-      petabyte-scale data ingestion platform at Target across Kafka, BigQuery,
-      GCS, Hive, and Postgres. Career spans low-level C/C++ firmware to
-      cloud-native data platforms. Interested in system design, engineering
-      leadership, and scalability.
-    </p>
-    <div class="about-tags">
-      <span class="tag">Distributed Systems</span>
-      <span class="tag">Data Engineering</span>
-      <span class="tag">Cloud · GCP</span>
-      <span class="tag">Java · Scala</span>
-      <span class="tag">Kafka · Spark</span>
-    </div>
-    <div class="about-links">
-      <a class="about-link" href="https://www.linkedin.com/in/amit-kumar-78618470/" target="_blank" rel="noopener">LinkedIn ↗</a>
-      <div class="about-link-sep"></div>
-      <a class="about-link" href="https://mail.google.com/mail/?view=cm&to=amitcse.nita@gmail.com" target="_blank" rel="noopener">Email ↗</a>
+  <!-- Hero -->
+  <section class="hero">
+    <h1 class="hero-headline">Small <em>tools</em>,<br>built to last.</h1>
+    <div class="hero-aside">
+      <div class="hero-byline">By Amit Kumar · Bengaluru</div>
+      <p class="hero-desc">A growing shelf of single-purpose web utilities I make for myself and share. Sign in with Google and your work — calculator history, planned days — stays with you across devices.</p>
     </div>
   </section>
 
   <!-- Tools -->
-  <section class="card" aria-label="Available tools">
-    <div class="tools-label">Available Tools</div>
-    <nav class="tool-list">
-      <a href="calculator.html" class="tool-row">
-        <span class="tool-num">1</span>
-        <div class="tool-info">
-          <span class="tool-name">Calculator</span>
-          <span class="tool-desc">Four-function with persistent history</span>
+  <section class="tools-section">
+    <div class="section-header">
+      <span class="section-label" id="toolsLabel">Available Tools · 3</span>
+      <div class="section-rule"></div>
+    </div>
+
+    <div class="tools-grid" id="toolsGrid">
+
+      <a href="calculator.html" class="tool-card">
+        <div class="tool-thumb">
+          <div class="thumb-calc">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span class="c-md"></span>
+            <span></span><span></span><span class="c-dk"></span><span class="c-acc"></span>
+          </div>
         </div>
-        <span class="tool-arrow">→</span>
-      </a>
-      <a href="scientific-calculator.html" class="tool-row">
-        <span class="tool-num">2</span>
-        <div class="tool-info">
-          <span class="tool-name">Scientific Calculator</span>
-          <span class="tool-desc">Trig, logarithms, powers, constants</span>
+        <div class="tool-body">
+          <div class="tool-num">№ 01</div>
+          <div class="tool-name">Calculator</div>
+          <div class="tool-desc">Four-function with persistent history.</div>
+          <div class="tool-open">Open <span>→</span></div>
         </div>
-        <span class="tool-arrow">→</span>
       </a>
-      <a href="todo.html" class="tool-row">
-        <span class="tool-num">3</span>
-        <div class="tool-info">
-          <span class="tool-name">Daily Planner</span>
-          <span class="tool-desc">24-hour scheduler with activity heatmap</span>
+
+      <a href="scientific-calculator.html" class="tool-card">
+        <div class="tool-thumb">
+          <div class="thumb-sci">sin <span class="t-acc">log</span> π² √</div>
         </div>
-        <span class="tool-arrow">→</span>
+        <div class="tool-body">
+          <div class="tool-num">№ 02</div>
+          <div class="tool-name">Scientific Calculator</div>
+          <div class="tool-desc">Trig, logarithms, powers, constants.</div>
+          <div class="tool-open">Open <span>→</span></div>
+        </div>
       </a>
-    </nav>
+
+      <a href="todo.html" class="tool-card">
+        <div class="tool-thumb">
+          <div class="thumb-plan">
+            <span style="height:38%"></span>
+            <span style="height:62%" class="p-mid"></span>
+            <span style="height:82%" class="p-hi"></span>
+            <span style="height:48%" class="p-mid"></span>
+            <span style="height:28%"></span>
+            <span style="height:68%" class="p-mid"></span>
+            <span style="height:52%"></span>
+            <span style="height:88%" class="p-hi"></span>
+            <span style="height:42%"></span>
+            <span style="height:58%" class="p-mid"></span>
+            <span style="height:32%"></span>
+            <span style="height:72%" class="p-mid"></span>
+          </div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-num">№ 03</div>
+          <div class="tool-name">Daily Planner</div>
+          <div class="tool-desc">24-hour scheduler with activity heatmap.</div>
+          <div class="tool-open">Open <span>→</span></div>
+        </div>
+      </a>
+
+    </div>
   </section>
 
-  <footer class="foot">
+  <!-- About -->
+  <section class="about-section">
+    <div class="about-left">
+      <div class="about-avatar">A</div>
+      <div class="about-text">
+        <div class="about-eyebrow">About</div>
+        <div class="about-name">Amit Kumar</div>
+        <p class="about-bio">Lead Engineer at Target Corporation, Bengaluru. Building distributed systems at petabyte scale — Kafka, BigQuery, GCS, Hive, Postgres. Career from C/C++ firmware to cloud-native data platforms.</p>
+      </div>
+    </div>
+    <div class="about-links">
+      <a class="icon-link" href="https://www.linkedin.com/in/amit-kumar-78618470/" target="_blank" rel="noopener">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn
+      </a>
+      <a class="icon-link" href="https://mail.google.com/mail/?view=cm&to=amitcse.nita@gmail.com" target="_blank" rel="noopener">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        Email
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<div class="wrap">
+  <footer class="site-footer">
     <span>Amit Kumar · 2026</span>
     <span>MMXXVI</span>
   </footer>
-
-</main>
+</div>
 
 <script src="firebase-auth.js"></script>
 <script>
   const ADMIN_EMAIL = 'amitcse.nita@gmail.com';
 
   window.onAuthReady = function(user) {
-    const toolsCard = document.querySelector('section[aria-label="Available tools"]');
-    const toolNav   = document.querySelector('.tool-list');
+    if (user && user.email === ADMIN_EMAIL) {
+      const grid = document.getElementById('toolsGrid');
+      if (document.getElementById('adminCard')) return;
 
-    if (!user) {
-      // Inject a sign-in nudge above the tool list
-      const nudge = document.createElement('div');
-      nudge.className = 'auth-nudge';
-      nudge.id = 'authNudge';
-      nudge.innerHTML = `
-        <span>Sign in to save your history and todos across devices</span>
-        <button class="auth-nudge-btn" onclick="fbSignIn()">Sign in</button>`;
-      toolsCard.insertBefore(nudge, toolNav);
-    } else {
-      // Remove nudge if already present
-      document.getElementById('authNudge')?.remove();
+      document.getElementById('toolsLabel').textContent = 'Available Tools · 4';
 
-      // If admin, append admin dashboard link
-      if (user.email === ADMIN_EMAIL) {
-        const existing = document.getElementById('adminToolRow');
-        if (!existing) {
-          const row = document.createElement('a');
-          row.id        = 'adminToolRow';
-          row.href      = 'admin.html';
-          row.className = 'tool-row admin-row';
-          row.innerHTML = `
-            <span class="tool-num">★</span>
-            <div class="tool-info">
-              <span class="tool-name">Admin Dashboard</span>
-              <span class="tool-desc">All users · calculations · tasks</span>
-            </div>
-            <span class="tool-arrow">→</span>`;
-          toolNav.appendChild(row);
-        }
-      }
+      const card = document.createElement('a');
+      card.id        = 'adminCard';
+      card.href      = 'admin.html';
+      card.className = 'tool-card';
+      card.innerHTML = `
+        <div class="tool-thumb" style="background:#FFF5F0">
+          <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:36px;color:var(--accent);opacity:.55;user-select:none">★</div>
+        </div>
+        <div class="tool-body">
+          <div class="tool-num">Admin</div>
+          <div class="tool-name">Dashboard</div>
+          <div class="tool-desc">All users · calculations · tasks.</div>
+          <div class="tool-open">Open <span>→</span></div>
+        </div>`;
+      grid.appendChild(card);
     }
   };
 </script>
+
 </body>
 </html>
