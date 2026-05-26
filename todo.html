@@ -677,29 +677,33 @@
 
   window._save = async function(h) {
     if (saving) return;
-    const input  = document.getElementById(`ti-${h}`);
-    const catSel = document.getElementById(`cs-${h}`);
-    const text   = input?.value?.trim();
+    const input    = document.getElementById(`ti-${h}`);
+    const catSel   = document.getElementById(`cs-${h}`);
+    const text     = input?.value?.trim();
+    // Capture category before any DOM changes — detached nodes can lose value in some browsers
+    const category = catSel?.value || state.tasks[h]?.category || 'general';
 
     if (!text) { window._cancel(); return; }
 
+    const existing = state.tasks[h];
     saving = true;
     state.editingHour = null;
-    renderRow(h); // show non-editing state immediately (optimistic)
+    // Optimistic update: show new text+category immediately without waiting for API
+    state.tasks[h] = { ...(existing || {}), task_text: text, category };
+    renderRow(h);
 
-    const existing = state.tasks[h];
     try {
       const headers = await window.authHeaders();
-      if (existing) {
+      if (existing?.task_id) {
         const r = await fetch(`${API}?id=${existing.task_id}`, {
           method: 'PATCH', headers,
-          body:   JSON.stringify({ task_text: text, category: catSel?.value || existing.category }),
+          body:   JSON.stringify({ task_text: text, category }),
         });
         state.tasks[h] = await r.json();
       } else {
         const r = await fetch(API, {
           method: 'POST', headers,
-          body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category: catSel?.value || 'general' }),
+          body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category }),
         });
         state.tasks[h] = await r.json();
       }
