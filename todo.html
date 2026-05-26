@@ -1383,18 +1383,7 @@ footer.foot a:hover { color: var(--ink-2); }
       loadDay(todayStr());
       loadHeatmap();
     } else {
-      currentUid = null;
-      state.tasks       = {};
-      state.heatmap     = {};
-      state.reflection  = REFLECT_DEF();
-      state.editingHour = null;
-      state.editingCat  = {};
-      state.editingPrio = {};
-      renderReflection();
-      renderAnalyticsToday();
-      document.getElementById('reflectionSection').style.display = 'none';
-      document.getElementById('analyticsSection').style.display  = 'none';
-      window.showAuthGate('hourGrid');
+      location.replace('index.html');
     }
   };
 

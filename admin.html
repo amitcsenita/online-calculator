@@ -293,7 +293,7 @@
 
   window.onAuthReady = async function(user) {
     if (!user) {
-      window.showAuthGate('mainCard');
+      location.replace('index.html');
       return;
     }
     // Check if admin by calling the API — it will 403 if not
