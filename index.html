@@ -11,9 +11,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <style>
   :root {
-    --paper:    #F1EBDF;
+    --paper:    #F1EBDF;Æ
     --paper-2:  #FAF6EC;
     --ink:      #1B1714;
     --ink-2:    #4B4239;
@@ -257,7 +260,7 @@
 
   <header class="brand">
     <div class="wordmark">Tools<span class="dot">.</span></div>
-    <div class="meta">amitcsenita</div>
+    <div id="authArea" class="meta">…</div>
   </header>
 
   <!-- About -->
@@ -325,5 +328,6 @@
 
 </main>
 
+<script src="firebase-auth.js"></script>
 </body>
 </html>

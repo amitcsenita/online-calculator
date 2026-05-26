@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <style>
   :root {
     --paper:    #F1EBDF;
@@ -424,7 +427,7 @@
 
   <header class="brand">
     <div class="wordmark">Tools<span class="dot">.</span><span class="sub">Daily</span></div>
-    <div class="meta">No. 003</div>
+    <div id="authArea" class="meta">…</div>
   </header>
 
   <section class="card" aria-label="Daily Planner">
@@ -529,7 +532,8 @@
     renderGrid();
 
     try {
-      const res   = await fetch(`${API}?date=${date}`);
+      const headers = await window.authHeaders();
+      const res   = await fetch(`${API}?date=${date}`, { headers });
       const tasks = await res.json();
       if (Array.isArray(tasks)) tasks.forEach(t => { state.tasks[t.hour] = t; });
     } catch (_) {}
@@ -627,17 +631,18 @@
     const existing = state.tasks[hour];
 
     try {
+      const headers = await window.authHeaders();
       if (existing) {
         const r = await fetch(`${API}?id=${existing.task_id}`, {
           method:  'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body:    JSON.stringify({ task_text: text, category: catSel.value }),
         });
         state.tasks[hour] = await r.json();
       } else {
         const r = await fetch(API, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body:    JSON.stringify({ date: state.date, hour, task_text: text, category: catSel.value }),
         });
         state.tasks[hour] = await r.json();
@@ -651,7 +656,8 @@
 
   window._del = async function(id, hour) {
     try {
-      await fetch(`${API}?id=${id}`, { method: 'DELETE' });
+      const headers = await window.authHeaders();
+      await fetch(`${API}?id=${id}`, { method: 'DELETE', headers });
       delete state.tasks[hour];
     } catch (_) {}
     state.editingHour = null;
@@ -661,9 +667,10 @@
 
   window._toggle = async function(id, hour, completed) {
     try {
+      const headers = await window.authHeaders();
       const r = await fetch(`${API}?id=${id}`, {
         method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body:    JSON.stringify({ completed }),
       });
       state.tasks[hour] = await r.json();
@@ -684,7 +691,8 @@
 
   async function loadHeatmap() {
     try {
-      const res  = await fetch(`${API}?heatmap=true`);
+      const headers = await window.authHeaders();
+      const res  = await fetch(`${API}?heatmap=true`, { headers });
       const data = await res.json();
       renderWeek(data);
     } catch (_) {}
@@ -753,13 +761,20 @@
     if (e.target.value) loadDay(e.target.value);
   });
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // ── Init (deferred until auth state is known) ─────────────────────────────
 
-  loadDay(todayStr());
-  loadHeatmap();
+  window.onAuthReady = function(user) {
+    if (user) {
+      loadDay(todayStr());
+      loadHeatmap();
+    } else {
+      window.showAuthGate('hourGrid');
+    }
+  };
 
 })();
 </script>
 
+<script src="firebase-auth.js"></script>
 </body>
 </html>

@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <style>
   :root {
     --paper:    #F1EBDF;
@@ -395,7 +398,7 @@
 
   <header class="brand">
     <div class="wordmark">Calculate<span class="dot">.</span></div>
-    <div class="meta">No. 001</div>
+    <div id="authArea" class="meta">…</div>
   </header>
 
   <section class="card" aria-label="Calculator">
@@ -728,7 +731,7 @@
   render();
 })();
 
-// ——— History via Vercel API ———
+// ——— History via Vercel API (user-scoped) ———
 const API = 'https://calculator-api-beige.vercel.app/api/calculations';
 
 function escHtml(s) {
@@ -736,16 +739,18 @@ function escHtml(s) {
 }
 
 async function saveCalc(expr, result) {
+  const headers = await window.authHeaders();
   await fetch(API, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ expression: expr, result: String(result) }),
   });
   loadHistory();
 }
 
 async function loadHistory() {
-  const res = await fetch(API);
+  const headers = await window.authHeaders();
+  const res = await fetch(API, { headers });
   const data = await res.json();
   renderHistory(Array.isArray(data) ? data : []);
 }
@@ -764,8 +769,16 @@ function renderHistory(records) {
   ).join('');
 }
 
-loadHistory();
+// onAuthReady is called by firebase-auth.js once auth state is known
+window.onAuthReady = function(user) {
+  if (user) {
+    loadHistory();
+  } else {
+    window.showAuthGate('historyList');
+  }
+};
 </script>
 
+<script src="firebase-auth.js"></script>
 </body>
 </html>
