@@ -630,6 +630,7 @@ footer.foot a:hover { color: var(--ink-2); }
 
   // ── State ────────────────────────────────────────────────────────────────────
   const REFLECT_DEF = () => ({ grade: null, focus: 0, energy: 0, mood: 0, wins: '', fix: '', learn: '' });
+  const reflectDirty = new Set(); // tracks which textarea keys were modified by the user
   const state = {
     date:        '',
     tasks:       {},
@@ -688,6 +689,7 @@ footer.foot a:hover { color: var(--ink-2); }
   // ── Reflection API ────────────────────────────────────────────────────────────
   async function loadReflection(date) {
     state.reflection = REFLECT_DEF();
+    reflectDirty.clear();
     setReflectStatus('idle');
     try {
       const headers = await window.authHeaders();
@@ -1191,11 +1193,13 @@ footer.foot a:hover { color: var(--ink-2); }
 
   document.querySelectorAll('.reflect-cell textarea').forEach(t => {
     t.addEventListener('input', () => {
+      reflectDirty.add(t.dataset.key);
       state.reflection[t.dataset.key] = t.value;
       setReflectStatus('saving');
       saveReflectionDebounced({ [t.dataset.key]: t.value });
     });
     t.addEventListener('blur', () => {
+      if (!reflectDirty.has(t.dataset.key)) return; // not modified — don't overwrite DB
       saveReflectionDebounced.cancel();
       saveReflection({ [t.dataset.key]: t.value });
     });
@@ -1205,7 +1209,8 @@ footer.foot a:hover { color: var(--ink-2); }
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       const active = document.activeElement;
-      if (active && active.tagName === 'TEXTAREA' && active.dataset.key) {
+      if (active && active.tagName === 'TEXTAREA' && active.dataset.key &&
+          reflectDirty.has(active.dataset.key)) {
         saveReflectionDebounced.cancel();
         saveReflection({ [active.dataset.key]: active.value });
       }
