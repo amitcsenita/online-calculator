@@ -612,7 +612,7 @@ footer.foot a:hover { color: var(--ink-2); }
 
   const API         = 'https://calculator-api-beige.vercel.app/api/tasks';
   const REFLECT_API = 'https://calculator-api-beige.vercel.app/api/reflections';
-  let saving     = false;
+  const saving   = new Set(); // per-hour: saving.has(h) means hour h's API call is in flight
   let currentUid = null;
 
   const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -907,9 +907,12 @@ footer.foot a:hover { color: var(--ink-2); }
         const row     = document.querySelector(`.hour-row[data-hour="${h}"]`);
         const focused = document.activeElement;
         if (row && row.contains(focused)) return;
-        if (state.editingHour === h && !saving) window._save(h);
+        if (state.editingHour === h && !saving.has(h)) window._save(h);
       }, 200);
     }
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); window._save(h); }
+    });
     input.addEventListener('blur', onBlur);
     if (catSel) catSel.addEventListener('blur', onBlur);
   }
@@ -987,7 +990,7 @@ footer.foot a:hover { color: var(--ink-2); }
   };
 
   window._save = async function(h) {
-    if (saving) return;
+    if (saving.has(h)) return;
     const input    = document.getElementById(`ti-${h}`);
     const catSel   = document.getElementById(`cs-${h}`);
     const text     = input?.value?.trim();
@@ -1001,7 +1004,7 @@ footer.foot a:hover { color: var(--ink-2); }
     if (!text) { window._cancel(); return; }
 
     const existing = state.tasks[h];
-    saving = true;
+    saving.add(h);
     state.editingHour = null;
     state.tasks[h] = { ...(existing||{}), task_text: text, category, priority };
     renderRow(h);
@@ -1025,7 +1028,7 @@ footer.foot a:hover { color: var(--ink-2); }
       }
     } catch {}
 
-    saving = false;
+    saving.delete(h);
     renderRow(h);
     updateGridStatDisplay();
     loadHeatmap();
@@ -1033,13 +1036,13 @@ footer.foot a:hover { color: var(--ink-2); }
   };
 
   window._del = async function(id, h) {
-    saving = true; state.editingHour = null; renderRow(h);
+    saving.add(h); state.editingHour = null; renderRow(h);
     try {
       const headers = await window.authHeaders();
       await fetch(`${API}?id=${id}`, { method: 'DELETE', headers });
       delete state.tasks[h];
     } catch {}
-    saving = false; renderRow(h); updateGridStatDisplay(); loadHeatmap(); renderAnalyticsToday();
+    saving.delete(h); renderRow(h); updateGridStatDisplay(); loadHeatmap(); renderAnalyticsToday();
   };
 
   window._toggle = async function(id, h, completed) {
