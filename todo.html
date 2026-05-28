@@ -871,6 +871,17 @@ footer.foot a:hover { color: var(--ink-2); }
     return `<span class="empty-hint" onclick="_edit(${h})">+ add task</span>`;
   }
 
+  function updateGridStatDisplay() {
+    let total = 0, done = 0;
+    for (let h = 0; h < 24; h++) {
+      const t = state.tasks[h];
+      if (t && t.task_text) { total++; if (t.completed) done++; }
+    }
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('gridStat').innerHTML = `<strong>${done}</strong> / ${total} done`;
+  }
+
   function renderRow(h) {
     const row = document.querySelector(`.hour-row[data-hour="${h}"]`);
     if (!row) return;
@@ -994,6 +1005,7 @@ footer.foot a:hover { color: var(--ink-2); }
     state.editingHour = null;
     state.tasks[h] = { ...(existing||{}), task_text: text, category, priority };
     renderRow(h);
+    updateGridStatDisplay();
 
     try {
       const headers = await window.authHeaders();
@@ -1015,6 +1027,7 @@ footer.foot a:hover { color: var(--ink-2); }
 
     saving = false;
     renderRow(h);
+    updateGridStatDisplay();
     loadHeatmap();
     renderAnalyticsToday();
   };
@@ -1026,12 +1039,13 @@ footer.foot a:hover { color: var(--ink-2); }
       await fetch(`${API}?id=${id}`, { method: 'DELETE', headers });
       delete state.tasks[h];
     } catch {}
-    saving = false; renderRow(h); loadHeatmap(); renderAnalyticsToday();
+    saving = false; renderRow(h); updateGridStatDisplay(); loadHeatmap(); renderAnalyticsToday();
   };
 
   window._toggle = async function(id, h, completed) {
     state.tasks[h] = { ...state.tasks[h], completed };
     renderRow(h);
+    updateGridStatDisplay();
     try {
       const headers = await window.authHeaders();
       const r = await fetch(`${API}?id=${id}`, {
@@ -1039,7 +1053,7 @@ footer.foot a:hover { color: var(--ink-2); }
       });
       state.tasks[h] = await r.json();
     } catch {}
-    renderRow(h); loadHeatmap(); renderAnalyticsToday();
+    renderRow(h); updateGridStatDisplay(); loadHeatmap(); renderAnalyticsToday();
   };
 
   // ── Priority and category change handlers ─────────────────────────────────────
