@@ -709,6 +709,7 @@ footer.foot a:hover { color: var(--ink-2); }
         method: 'POST', headers,
         body:   JSON.stringify({ date: state.date, ...fields }),
       });
+      if (!res.ok) { setReflectStatus('error'); return; }
       const data = await res.json();
       if (data) state.reflection = { ...REFLECT_DEF(), ...data };
       setReflectStatus('saved', new Date());
