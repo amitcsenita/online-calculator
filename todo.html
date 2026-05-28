@@ -1001,13 +1001,14 @@ footer.foot a:hover { color: var(--ink-2); }
           method: 'PATCH', headers,
           body:   JSON.stringify({ task_text: text, category, priority }),
         });
-        state.tasks[h] = await r.json();
+        if (r.ok) state.tasks[h] = await r.json();
       } else {
         const r = await fetch(API, {
           method: 'POST', headers,
           body:   JSON.stringify({ date: state.date, hour: h, task_text: text, category, priority }),
         });
-        state.tasks[h] = await r.json();
+        if (r.ok) state.tasks[h] = await r.json();
+        else state.tasks[h] = { ...(existing||{}), task_text: text, category, priority };
       }
     } catch {}
 
