@@ -729,8 +729,9 @@ footer.foot a:hover { color: var(--ink-2); }
     else if (diff === -1) name = 'Yesterday';
     else if (diff === 1)  name = 'Tomorrow';
     document.getElementById('dayName').textContent = name;
+    const dayOfWeek = diff >= -1 && diff <= 1 ? `${DAYS[d.getDay()]} · ` : '';
     document.getElementById('dateStr').textContent =
-      `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+      `${dayOfWeek}${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     document.getElementById('jumpDate').value = state.date;
   }
 
